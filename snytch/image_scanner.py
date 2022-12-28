@@ -1,5 +1,5 @@
 import tarfile, json
-from typing import IO
+from typing import IO, List
 
 from snytch.client import DockerClient
 
@@ -9,6 +9,7 @@ class SecretsScanner:
         self.image = image
 
     def scan(self, file: tarfile.TarInfo = None):
+        keywords = self.__read_keywords()
         if not file:
             docker_client = DockerClient()
             file = docker_client.export_image(self.image)
@@ -25,7 +26,7 @@ class SecretsScanner:
                     print("inspecting layer {}:".format(layer_manifest["id"]))
                     self.scan(self.__extract_file(img, member))
                 if not member.name.endswith(".tar"):
-                    found = self.__scan_secrets(img, member)
+                    found = self.__scan_secrets(img, member, keywords)
                     if found:
                         print("{} -> \r\n{}".format(member.name, found))
 
@@ -38,14 +39,36 @@ class SecretsScanner:
     ) -> IO[bytes]:
         return image.extractfile(file)
 
-    def __scan_secrets(self, image: tarfile.TarFile, file: tarfile.TarInfo):
+    def __scan_secrets(
+        self, image: tarfile.TarFile, file: tarfile.TarInfo, keywords: List[str]
+    ):
         data = self.__extract_file(image, file)
         if not data:
             return None
         try:
             strings = data.read().decode("utf-8")
             for line in strings.splitlines():
-                if line.find("password") != -1:
+
+                if self.__scan_keywords(line, keywords):
                     return strings
         except:
             return None
+
+    def __scan_keywords(self, line: str, keywords: List[str]) -> bool:
+        for keyword in keywords:
+            if line.find(keyword) != -1:
+                return True
+        return False
+
+    def __read_keywords(self) -> List[str]:
+        try:
+            import importlib.resources as pkg_resources
+        except ImportError:
+            import importlib_resources as pkg_resources
+
+        from . import (
+            rules,
+        )
+
+        with pkg_resources.open_text(rules, "keywords") as fp:
+            return fp.read().splitlines()
