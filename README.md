@@ -1,0 +1,2 @@
+# snytch
+Container secret scanner
