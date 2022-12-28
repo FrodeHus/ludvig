@@ -18,11 +18,11 @@ class SecretsScanner:
         with tarfile.open(fileobj=file) as img:
             for member in img:
                 if member.name.endswith(".tar"):
-                    layer_id = member.name.split("/")[0]
+                    path = member.name.split("/")[0]
                     layer_manifest = self.__get_layer_instruction(
-                        img, img.getmember("{}/json".format(layer_id))
+                        img, img.getmember("{}/json".format(path))
                     )
-                    print("inspecting layer {}:".format(layer_id))
+                    print("inspecting layer {}:".format(layer_manifest["id"]))
                     self.scan(self.__extract_file(img, member))
                 if not member.name.endswith(".tar"):
                     found = self.__scan_secrets(img, member)
