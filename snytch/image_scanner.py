@@ -56,7 +56,7 @@ class SecretsScanner:
 
     def __scan_keywords(self, line: str, keywords: List[str]) -> bool:
         for keyword in keywords:
-            if line.find(keyword) != -1:
+            if line.lower().find(keyword.lower()) != -1:
                 return True
         return False
 
