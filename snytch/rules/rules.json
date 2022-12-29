@@ -1,0 +1,14 @@
+[
+    {
+        "name": "GitHub Personal Access Token",
+        "pattern": "ghp_[0-9a-zA-Z]{36}"
+    },
+    {
+        "name": "GitHub App Token",
+        "pattern": "(ghu|ghs)_[0-9a-zA-Z]{36}"
+    },
+    {
+        "name": "GitHub Refresh Token",
+        "pattern": "ghr_[0-9a-zA-Z]{76}"
+    }
+]
