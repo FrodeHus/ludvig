@@ -10,5 +10,9 @@
     {
         "name": "GitHub Refresh Token",
         "pattern": "ghr_[0-9a-zA-Z]{76}"
+    },
+    {
+        "name": "Generic Secret",
+        "pattern": "[\"]?(password|secret)[\"]?:[\\s\\t]*[\"]?(?<secret>[\\w]*)"
     }
 ]

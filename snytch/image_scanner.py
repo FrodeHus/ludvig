@@ -1,3 +1,4 @@
+import os
 import tarfile, json, re
 from typing import IO, List
 from snytch.client import DockerClient
@@ -36,6 +37,13 @@ class SecretsScanner:
                     found = self.__scan_secrets(img, member)
                     if found:
                         print("{} -> \r\n{}".format(member.name, found))
+                    if os.path.basename(member.name).startswith(".wh."):
+                        original_file = member.name.replace(".wh.", "")
+                        print(
+                            "{} was deleted from merged layer set, but remains in container".format(
+                                original_file
+                            )
+                        )
 
     def __get_layer_manifest(self, image: tarfile.TarFile, layer: tarfile.TarInfo):
         extracted_layer_manifest = self.__extract_file(image, layer)
@@ -53,16 +61,14 @@ class SecretsScanner:
             return None
         try:
             strings = data.read().decode("utf-8")
-            for line in strings.splitlines():
-
-                if self.__scan_secret(line):
-                    return strings
+            if self.__scan_secret(strings):
+                return strings
         except:
             return None
 
-    def __scan_secret(self, line: str) -> bool:
+    def __scan_secret(self, content: str) -> bool:
         for rule in self.rules:
-            if re.search(rule.pattern, line):
+            if re.search(rule.pattern, content):
                 return True
         return False
 
