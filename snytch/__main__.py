@@ -8,9 +8,9 @@ from snytch.types import Image, Layer
 
 
 def main():
-    image = read_image(sys.argv[1])
-    scanner = SecretsScanner(sys.argv[1])
-    scanner.scan()
+    with read_image(sys.argv[1]) as image:
+        scanner = SecretsScanner(image)
+        scanner.scan()
 
 
 def read_image(name: str) -> Image:
@@ -19,11 +19,11 @@ def read_image(name: str) -> Image:
     if not tarfile.is_tarfile(file):
         raise Exception("Not an image")
     file.seek(0)
-    with tarfile.open(fileobj=file) as img:
-        with img.extractfile("manifest.json") as mf:
-            manifest = json.load(mf)
-        with img.extractfile(manifest[0]["Config"]) as cf:
-            config = json.load(cf)
+    img = tarfile.open(fileobj=file)
+    with img.extractfile("manifest.json") as mf:
+        manifest = json.load(mf)
+    with img.extractfile(manifest[0]["Config"]) as cf:
+        config = json.load(cf)
 
     layers = []
     for idx, layer in enumerate(manifest[0]["Layers"]):
@@ -40,7 +40,7 @@ def read_image(name: str) -> Image:
                 ),
             )
         )
-    return Image(manifest["RepoTags"], layers)
+    return Image(manifest[0]["RepoTags"], layers, img)
 
 
 def get_layer_history(config: dict, layer_index: int):

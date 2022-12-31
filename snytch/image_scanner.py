@@ -3,51 +3,29 @@ import tarfile, json, re
 from typing import IO, List
 from snytch.client import DockerClient
 from snytch.rules.types import SecretScanRule
+from snytch.types import Image
 
 
 class SecretsScanner:
-    def __init__(self, image: str) -> None:
+    def __init__(self, image: Image) -> None:
         self.image = image
         self.rules = self.__read_rules()
-        self.__docker_client = DockerClient()
 
-    def scan(self, file: tarfile.TarInfo = None):
-        if not file:
-            file = self.__docker_client.export_image(self.image)
-            history = self.__docker_client.image_history(self.image)
-        if not tarfile.is_tarfile(file):
-            raise Exception("Not an image")
-        file.seek(0)
-        with tarfile.open(fileobj=file) as img:
-            for member in img:
-                if member.name.endswith(".tar"):
-                    path = member.name.split("/")[0]
-                    layer_manifest = self.__get_layer_manifest(
-                        img, img.getmember("{}/json".format(path))
-                    )
-
-                    layer_history = self.__get_layer_history(
-                        history, layer_manifest["id"]
-                    )
-                    print("inspecting layer {}:".format(layer_manifest["id"]))
-                    self.scan(self.__extract_file(img, member))
-                if not member.name.endswith(".tar") or not member.name.endswith(
-                    "/json"
-                ):
-                    found = self.__scan_secrets(img, member)
+    def scan(self):
+        for layer in self.image.layers:
+            print("inspecting layer {}:".format(layer.id))
+            layer_archive = self.image.image_archive.extractfile(
+                "{}/layer.tar".format(layer.id)
+            )
+            with tarfile.open(fileobj=layer_archive, mode="r") as lf:
+                for member in lf.getmembers():
+                    found = self.__scan_secrets(lf, member)
                     if found:
-                        print("{} -> \r\n{}".format(member.name, found))
-                    if os.path.basename(member.name).startswith(".wh."):
-                        original_file = member.name.replace(".wh.", "")
                         print(
-                            "{} was deleted from merged layer set, but remains in container".format(
-                                original_file
+                            "{} [{}]-> \r\n{}".format(
+                                member.name, layer.created_by, found
                             )
                         )
-
-    def __get_layer_manifest(self, image: tarfile.TarFile, layer: tarfile.TarInfo):
-        extracted_layer_manifest = self.__extract_file(image, layer)
-        return json.loads(extracted_layer_manifest.read().decode("utf-8"))
 
     def __extract_file(
         self, image: tarfile.TarFile, file: tarfile.TarInfo
@@ -85,12 +63,3 @@ class SecretsScanner:
         with pkg_resources.open_text(rules, "rules.json") as fp:
             rule_str = fp.read()
             return json.loads(rule_str, object_hook=SecretScanRule.from_json)
-
-    def __get_layer_history(self, image_history: list, layer_id: str):
-        for item in image_history:
-            if item["Id"] == "sha:{}".format(layer_id):
-                return item
-        return None
-
-    def __get_instruction_history(self, manifest: dict, history: list):
-        pass
