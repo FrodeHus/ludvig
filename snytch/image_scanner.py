@@ -1,54 +1,62 @@
 import os
 import tarfile, json, re
-from typing import IO, List
-from snytch.client import DockerClient
+from typing import IO, List, Tuple
 from snytch.rules.types import SecretScanRule
-from snytch.types import Image
+from snytch.types import Finding, Image, SecretFinding
 
 
 class SecretsScanner:
     def __init__(self, image: Image) -> None:
         self.image = image
         self.rules = self.__read_rules()
+        self.findings: List[Finding] = []
 
     def scan(self):
         for layer in self.image.layers:
-            print("inspecting layer {}:".format(layer.id))
             layer_archive = self.image.image_archive.extractfile(
                 "{}/layer.tar".format(layer.id)
             )
             with tarfile.open(fileobj=layer_archive, mode="r") as lf:
                 for member in lf.getmembers():
-                    found = self.__scan_secrets(lf, member)
-                    if found:
-                        print(
-                            "{} [{}]-> \r\n{}".format(
-                                member.name, layer.created_by, found
-                            )
-                        )
+                    if os.path.basename(member.name).startswith(".wh."):
+                        self.__whiteout(member.name)
+
+                    finding = self.__scan_secrets(lf, member)
+                    if finding:
+                        self.findings.append(finding)
+
+    def __whiteout(self, filename: str):
+        finding = [
+            finding
+            for finding in self.findings
+            if finding.filename == filename.replace(".wh.", "")
+        ][0]
+        finding.whiteout = True
 
     def __extract_file(
         self, image: tarfile.TarFile, file: tarfile.TarInfo
     ) -> IO[bytes]:
         return image.extractfile(file)
 
-    def __scan_secrets(self, image: tarfile.TarFile, file: tarfile.TarInfo):
+    def __scan_secrets(self, image: tarfile.TarFile, file: tarfile.TarInfo) -> Finding:
         data = self.__extract_file(image, file)
 
         if not data:
             return None
         try:
             strings = data.read().decode("utf-8")
-            if self.__scan_secret(strings):
-                return strings
-        except:
+            result, rule, match = self.__scan_secret(strings)
+            if result:
+                return SecretFinding(rule, match, file.name)
+        except Exception as ex:
             return None
 
-    def __scan_secret(self, content: str) -> bool:
+    def __scan_secret(self, content: str) -> Tuple[bool, SecretScanRule, re.Match[str]]:
         for rule in self.rules:
-            if re.search(rule.pattern, content):
-                return True
-        return False
+            m = re.search(rule.pattern, content)
+            if m:
+                return True, rule, m
+        return False, None, None
 
     def __read_rules(self) -> List[SecretScanRule]:
         try:

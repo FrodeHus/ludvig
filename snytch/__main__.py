@@ -2,15 +2,33 @@ import json
 import sys
 import tarfile
 from snytch.client import DockerClient
-
 from snytch.image_scanner import SecretsScanner
 from snytch.types import Image, Layer
+from rich.table import Table
+from rich.console import Console
 
 
 def main():
     with read_image(sys.argv[1]) as image:
         scanner = SecretsScanner(image)
         scanner.scan()
+        table = Table(title="Findings")
+        table.add_column("Category", style="cyan")
+        table.add_column("Rule", style="cyan")
+        table.add_column("Filename", style="cyan")
+        table.add_column("Content")
+        for finding in scanner.findings:
+            table.add_row(
+                finding.category,
+                finding.rule.name,
+                "{} {}".format(
+                    finding.filename, ("[red](deleted)[/]" if finding.whiteout else "")
+                ),
+                finding.content,
+            )
+
+        console = Console()
+        console.print(table)
 
 
 def read_image(name: str) -> Image:

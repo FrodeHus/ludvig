@@ -2,9 +2,14 @@ import json
 from typing import List
 
 
-class SecretScanRule:
-    def __init__(self, name: str, pattern: str) -> None:
+class Rule:
+    def __init__(self, name: str) -> None:
         self.name = name
+
+
+class SecretScanRule(Rule):
+    def __init__(self, name: str, pattern: str) -> None:
+        super().__init__(name)
         self.pattern = pattern
 
     def __str__(self):

@@ -13,6 +13,6 @@
     },
     {
         "name": "Generic Secret",
-        "pattern": "[\"]?(password|secret)[\"]?:[\\s\\t]*[\"]?(?<secret>[\\w]*)"
+        "pattern": "[\"]?(password|secret)[\"]?:[\\s\\t]*[\"]?([\\w]*)"
     }
 ]
