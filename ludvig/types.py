@@ -2,7 +2,7 @@ import re
 from tarfile import TarFile
 from typing import List
 
-from snytch.rules.types import Rule, SecretScanRule
+from ludvig.rules.types import Rule, SecretScanRule
 
 
 class Layer:

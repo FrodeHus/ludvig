@@ -1,9 +1,9 @@
 import json
 import sys
 import tarfile
-from snytch.client import DockerClient
-from snytch.image_scanner import SecretsScanner
-from snytch.types import Image, Layer
+from ludvig.client import DockerClient
+from ludvig.image_scanner import SecretsScanner
+from ludvig.types import Image, Layer
 from rich.table import Table
 from rich.console import Console
 

@@ -1,8 +1,8 @@
 import os
 import tarfile, json, re
 from typing import IO, List, Tuple
-from snytch.rules.types import SecretScanRule
-from snytch.types import Finding, Image, SecretFinding
+from ludvig.rules.types import SecretScanRule
+from ludvig.types import Finding, Image, SecretFinding
 
 
 class SecretsScanner:
