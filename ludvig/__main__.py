@@ -13,14 +13,12 @@ def main():
         scanner = SecretsScanner(image)
         scanner.scan()
         table = Table(title="Findings")
-        table.add_column("Category", style="cyan")
         table.add_column("Rule", style="cyan")
         table.add_column("Filename", style="cyan")
         table.add_column("Content")
         for finding in scanner.findings:
             table.add_row(
-                finding.category,
-                finding.rule.name,
+                "{}\r\n[green]{}[/]".format(finding.rule.name, finding.category),
                 "{} {}".format(
                     finding.filename, ("[red](deleted)[/]" if finding.whiteout else "")
                 ),

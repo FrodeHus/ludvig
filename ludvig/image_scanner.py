@@ -12,10 +12,11 @@ class SecretsScanner:
         self.findings: List[Finding] = []
 
     def scan(self):
-        for layer in self.image.layers:
+        for layer in [l for l in self.image.layers if not l.empty_layer]:
             layer_archive = self.image.image_archive.extractfile(
                 "{}/layer.tar".format(layer.id)
             )
+
             with tarfile.open(fileobj=layer_archive, mode="r") as lf:
                 for member in lf.getmembers():
                     if os.path.basename(member.name).startswith(".wh."):
