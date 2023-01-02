@@ -3,6 +3,7 @@ from tarfile import TarFile
 from typing import List
 
 from ludvig.rules.types import Rule, SecretScanRule
+from ludvig.utils import get_line_number
 
 
 class Layer:
@@ -44,6 +45,12 @@ class SecretFinding(Finding):
     ) -> None:
         super().__init__("Secret", rule, filename)
         content = secret_match.string
-        matched = secret_match.group(len(secret_match.groups()))
-        content = content.replace(matched, "*" * len(matched))
-        self.content = content
+        if secret_match.lastindex:
+            matched = secret_match.group(secret_match.lastindex)
+        else:
+            matched = secret_match.group()
+        location = secret_match.regs[len(secret_match.regs)-1]
+        line_number, line = get_line_number(content, location[0])
+        
+        line = line.replace(matched, "*" * len(matched))
+        self.content = "{}: {}".format(line_number + 1, line)

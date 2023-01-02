@@ -31,13 +31,17 @@ class SecretsScanner:
             finding
             for finding in self.findings
             if finding.filename == filename.replace(".wh.", "")
-        ][0]
-        finding.whiteout = True
+        ]
+        if len(finding) == 0:
+            return
+        finding[0].whiteout = True
 
     def __extract_file(
         self, image: tarfile.TarFile, file: tarfile.TarInfo
     ) -> IO[bytes]:
-        return image.extractfile(file)
+        if file.isfile():
+            return image.extractfile(file)
+        return None
 
     def __scan_secrets(self, image: tarfile.TarFile, file: tarfile.TarInfo) -> Finding:
         data = self.__extract_file(image, file)

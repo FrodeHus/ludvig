@@ -15,7 +15,7 @@ def main():
         table = Table(title="Findings")
         table.add_column("Rule", style="cyan")
         table.add_column("Filename", style="cyan")
-        table.add_column("Content")
+        table.add_column("Content", style="red")
         for finding in scanner.findings:
             table.add_row(
                 "{}\r\n[green]{}[/]".format(finding.rule.name, finding.category),
