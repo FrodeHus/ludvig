@@ -51,4 +51,4 @@ class SecretFinding(Finding):
         obfuscation = "*" * len(matched)
         obfuscation = obfuscation[:7] + '...' if len(obfuscation) > 10 else obfuscation
         line = line.replace(matched, obfuscation)
-        self.content = "{}: {}".format(line_number + 1, line)
+        self.content = "{}: {}".format(line_number + 1, line.lstrip())
