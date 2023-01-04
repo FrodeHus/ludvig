@@ -45,12 +45,10 @@ class SecretFinding(Finding):
     ) -> None:
         super().__init__("Secret", rule, filename)
         content = secret_match.string
-        if secret_match.lastindex:
-            matched = secret_match.group(secret_match.lastindex)
-        else:
-            matched = secret_match.group()
+        matched = secret_match.group("value")
         location = secret_match.regs[len(secret_match.regs)-1]
         line_number, line = get_line_number(content, location[0])
-        
-        line = line.replace(matched, "*" * len(matched))
+        obfuscation = "*" * len(matched)
+        obfuscation = obfuscation[:7] + '...' if len(obfuscation) > 10 else obfuscation
+        line = line.replace(matched, obfuscation)
         self.content = "{}: {}".format(line_number + 1, line)

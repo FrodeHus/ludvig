@@ -1,18 +1,30 @@
 [
     {
         "name": "GitHub Personal Access Token",
-        "pattern": "ghp_[0-9a-zA-Z]{36}"
+        "pattern": "(?P<value>ghp_[0-9a-zA-Z]{36})"
     },
     {
         "name": "GitHub App Token",
-        "pattern": "(ghu|ghs)_[0-9a-zA-Z]{36}"
+        "pattern": "(?P<value>(ghu|ghs)_[0-9a-zA-Z]{36})"
     },
     {
         "name": "GitHub Refresh Token",
-        "pattern": "ghr_[0-9a-zA-Z]{76}"
+        "pattern": "(?P<value>ghr_[0-9a-zA-Z]{76})"
     },
     {
         "name": "Generic Secret",
-        "pattern": "[\"]?(password|secret)[\"]?:[\\s\\t]*[\"]?([\\w]*)"
+        "pattern": "[\"]?(password|secret)[\"]?:[\\s\\t]*[\"]?(?P<value>[\\w]*)"
+    },
+    {
+        "name": "AWS Secret Key",
+        "pattern": "(?i)(^|\\s+)[\"']?(aws)[\\w]*[\"'=:\\s]*?(?P<value>[0-9a-zA-Z\/+]{40})"
+    },
+    {
+        "name": "AWS Access Key",
+        "pattern": "(?i)(^|\\s+)[\"']?(aws)[\\w]*[\"'=:\\s]*?(?P<value>(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16})"
+    },
+    {
+        "name": "PEM Private Key",
+        "pattern": "-----BEGIN (\\S+ )?PRIVATE KEY(\\sBLOCK)?-----((?P<value>(\n.*?)+)-----END (\\S+ )?PRIVATE KEY(\\sBLOCK)?-----)?"
     }
 ]

@@ -9,7 +9,7 @@ def get_line_number(content : str, position : int) -> Tuple[int, str]:
         index = int(lower + (upper - lower) / 2)
         start = content.index(lines[index])
         if position == start:
-            return index
+            return index, lines[index - 1]
         if start > position:
             upper = index - 1
         else:
