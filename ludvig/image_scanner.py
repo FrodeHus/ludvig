@@ -1,3 +1,4 @@
+import base64
 import os
 import tarfile, json, re
 from typing import IO, List, Tuple
@@ -22,9 +23,9 @@ class SecretsScanner:
                     if os.path.basename(member.name).startswith(".wh."):
                         self.__whiteout(member.name)
 
-                    finding = self.__scan_secrets(lf, member)
-                    if finding:
-                        self.findings.append(finding)
+                    for _, finding in enumerate(self.__scan_secrets(lf, member)):
+                        if finding:
+                            self.findings.append(finding)
 
     def __whiteout(self, filename: str):
         finding = [
@@ -50,18 +51,32 @@ class SecretsScanner:
             return None
         try:
             strings = data.read().decode("utf-8")
-            result, rule, match = self.__scan_secret(strings)
-            if result:
-                return SecretFinding(rule, match, file.name)
+            for _, (rule, match) in enumerate(self.__scan_secret(strings)):
+                if match != None:
+                    yield SecretFinding(rule, match, file.name)
         except Exception as ex:
             return None
 
     def __scan_secret(self, content: str) -> Tuple[bool, SecretScanRule, re.Match[str]]:
+        content = self.__decode_content(content)
         for rule in self.rules:
-            m = re.search(rule.pattern, content)
-            if m:
-                return True, rule, m
-        return False, None, None
+            for match in re.finditer(rule.pattern, content):
+                yield rule, match
+        yield None, None
+
+    def __decode_content(self, content: str) -> str:
+        for match in self.__possible_base64_encoding(content):
+            try:
+                decoded = base64.b64decode(match.group()).decode("utf-8")
+                content = content.replace(match.group(), decoded)
+            except UnicodeDecodeError:
+                continue
+        return content
+
+    def __possible_base64_encoding(self, content: str):
+        return re.finditer(r"(^|\s+)[\"']?((?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{4}|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{2}={2}))[\"']",
+            content, flags=re.RegexFlag.MULTILINE
+        )
 
     def __read_rules(self) -> List[SecretScanRule]:
         try:
