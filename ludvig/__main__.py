@@ -3,14 +3,16 @@ import sys
 import tarfile
 from ludvig.client import DockerClient
 from ludvig.image_scanner import SecretsScanner
+from ludvig.rules.loader import load_yara_rules
 from ludvig.types import Image, Layer
 from rich.table import Table
 from rich.console import Console
 
 
 def main():
+    yara_rules = load_yara_rules()
     with read_image(sys.argv[1]) as image:
-        scanner = SecretsScanner(image)
+        scanner = SecretsScanner(image, yara_rules)
         scanner.scan()
         table = Table(title="Findings")
         table.add_column("Rule", style="cyan")
@@ -18,9 +20,9 @@ def main():
         table.add_column("Content", style="red")
         for finding in scanner.findings:
             table.add_row(
-                "{}\r\n[green]{}[/]".format(finding.rule.name, finding.category),
+                "{}\r\n[green]{}[/]".format(finding.match.rule_name, finding.category),
                 "{} {}".format(
-                    finding.filename, ("[red](deleted)[/]" if finding.whiteout else "")
+                    finding.filename, (":cross_mark:" if finding.whiteout else "")
                 ),
                 finding.content,
             )

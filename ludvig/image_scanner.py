@@ -1,15 +1,15 @@
 import base64
 import os
-import tarfile, json, re
+import tarfile, re
 from typing import IO, List, Tuple
-from ludvig.rules.types import SecretScanRule
-from ludvig.types import Finding, Image, SecretFinding
+from ludvig.types import Finding, Image, SecretFinding, YaraRuleMatch
+import yara
 
 
 class SecretsScanner:
-    def __init__(self, image: Image) -> None:
+    def __init__(self, image: Image, yara_rules : yara.Rules) -> None:
         self.image = image
-        self.rules = self.__read_rules()
+        self.yara = yara_rules
         self.findings: List[Finding] = []
 
     def scan(self):
@@ -33,9 +33,9 @@ class SecretsScanner:
             for finding in self.findings
             if finding.filename == filename.replace(".wh.", "")
         ]
-        if len(finding) == 0:
-            return
-        finding[0].whiteout = True
+        
+        for f in finding:
+            f.whiteout = True
 
     def __extract_file(
         self, image: tarfile.TarFile, file: tarfile.TarInfo
@@ -50,19 +50,11 @@ class SecretsScanner:
         if not data:
             return None
         try:
-            strings = data.read().decode("utf-8")
-            for _, (rule, match) in enumerate(self.__scan_secret(strings)):
-                if match != None:
-                    yield SecretFinding(rule, match, file.name)
+            matches = self.yara.match(data=data.read())
+            for match in matches:
+                yield SecretFinding(YaraRuleMatch(match), file.name)
         except Exception as ex:
             return None
-
-    def __scan_secret(self, content: str) -> Tuple[bool, SecretScanRule, re.Match[str]]:
-        content = self.__decode_content(content)
-        for rule in self.rules:
-            for match in re.finditer(rule.pattern, content):
-                yield rule, match
-        yield None, None
 
     def __decode_content(self, content: str) -> str:
         for match in self.__possible_base64_encoding(content):
@@ -74,20 +66,8 @@ class SecretsScanner:
         return content
 
     def __possible_base64_encoding(self, content: str):
-        return re.finditer(r"(^|\s+)[\"']?((?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{4}|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{2}={2}))[\"']",
-            content, flags=re.RegexFlag.MULTILINE
+        return re.finditer(
+            r"(^|\s+)[\"']?((?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{4}|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{2}={2}))[\"']",
+            content,
+            flags=re.RegexFlag.MULTILINE,
         )
-
-    def __read_rules(self) -> List[SecretScanRule]:
-        try:
-            import importlib.resources as pkg_resources
-        except ImportError:
-            import importlib_resources as pkg_resources
-
-        from . import (
-            rules,
-        )
-
-        with pkg_resources.open_text(rules, "rules.json") as fp:
-            rule_str = fp.read()
-            return json.loads(rule_str, object_hook=SecretScanRule.from_json)
