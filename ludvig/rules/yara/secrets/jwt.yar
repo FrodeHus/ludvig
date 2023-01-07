@@ -2,10 +2,7 @@ rule jwt_token : jwt secret {
     meta:
         description = "Detects a JWT token "
     strings:
-        $1 = "iss" base64
-        $2 = "iat" base64
-        $3 = "nbf" base64
-        $4 = "exp" base64
+        $1 = /eyJ[a-zA-Z0-9+\/=]*\.eyJ[a-zA-Z0-9+\/=]*\..*/ ascii
     condition:
         all of them
 }
