@@ -1,6 +1,7 @@
 import json
 import sys
 import tarfile
+import argparse
 from ludvig.client import DockerClient
 from ludvig.image_scanner import SecretsScanner
 from ludvig.rules.loader import load_yara_rules
@@ -10,8 +11,13 @@ from rich.console import Console
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("image", help="Container image to scan (ex: myimage:1.1)")
+
+    args = parser.parse_args()
+
     yara_rules = load_yara_rules()
-    with read_image(sys.argv[1]) as image:
+    with read_image(args.image) as image:
         scanner = SecretsScanner(image, yara_rules)
         scanner.scan()
         table = Table(title="Findings")

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ludvig"
+version = "0.0.1"
+authors = [{ name = "Frode Hus", email = "frode@frodehus.dev" }]
+description = "A simple vulnerability scanner"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+ludvig = "ludvig.__main__:main"
+
+
+[project.urls]
+"Homepage" = "https://github.com/frodehus/ludvig"
+"Bug Tracker" = "https://github.com/frodehus/ludvig/issues"
