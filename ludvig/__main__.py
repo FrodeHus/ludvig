@@ -20,6 +20,9 @@ def main():
         help="Shows any detected secrets without obfuscation",
         action="store_true",
     )
+    parser.add_argument(
+        "--custom-rules", help="Path to custom YARA rules (need to have .yar extension)"
+    )
     sub_parsers = parser.add_subparsers(dest="scan_type")
     image_parser = sub_parsers.add_parser("image", help="scan container")
     image_parser.add_argument("name", help="Container image to scan (ex: myimage:1.1)")
@@ -27,7 +30,7 @@ def main():
     fs_parser.add_argument("path", help="Path to scan")
     args = parser.parse_args()
 
-    yara_rules = load_yara_rules()
+    yara_rules = load_yara_rules(custom=args.custom_rules)
     if args.scan_type == "image":
         findings = scan_image(args.name, yara_rules)
     elif args.scan_type == "fs":
