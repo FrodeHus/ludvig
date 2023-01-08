@@ -7,7 +7,7 @@ import yara
 
 
 class SecretsScanner:
-    def __init__(self, image: Image, yara_rules : yara.Rules) -> None:
+    def __init__(self, image: Image, yara_rules: yara.Rules) -> None:
         self.image = image
         self.yara = yara_rules
         self.findings: List[Finding] = []
@@ -33,7 +33,7 @@ class SecretsScanner:
             for finding in self.findings
             if finding.filename == filename.replace(".wh.", "")
         ]
-        
+
         for f in finding:
             f.whiteout = True
 
@@ -52,9 +52,18 @@ class SecretsScanner:
         try:
             matches = self.yara.match(data=data.read())
             for match in matches:
-                yield SecretFinding(YaraRuleMatch(match), file.name)
+                offset = match.strings[0][0]
+                prefix_offset = 10 if offset > 10 else offset
+                offset = offset - prefix_offset
+                data.seek(offset)
+                snippet = data.read(len(match.strings[0][2]) + prefix_offset).decode(
+                    "utf-8"
+                )
+                yield SecretFinding(YaraRuleMatch(snippet, match), file.name)
         except Exception as ex:
             return None
+        finally:
+            data.close()
 
     def __decode_content(self, content: str) -> str:
         for match in self.__possible_base64_encoding(content):
