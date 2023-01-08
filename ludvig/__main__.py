@@ -13,7 +13,11 @@ from rich.console import Console
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("image", help="Container image to scan (ex: myimage:1.1)")
-
+    parser.add_argument(
+        "--deobfuscated",
+        help="Shows any detected secrets without obfuscation",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     yara_rules = load_yara_rules()
@@ -30,7 +34,9 @@ def main():
                 "{} {}".format(
                     finding.filename, (":cross_mark:" if finding.whiteout else "")
                 ),
-                finding.content,
+                finding.obfuscated_content
+                if not args.deobfuscated
+                else finding.content,
             )
 
         console = Console()

@@ -63,6 +63,7 @@ class Finding:
         self.match = match
         self.filename = filename
         self.content = None
+        self.obfuscated_content = None
         self.whiteout = whiteout
 
 
@@ -75,4 +76,5 @@ class SecretFinding(Finding):
         obfuscation = "*" * len(matched)
         obfuscation = obfuscation[:7] + "..." if len(obfuscation) > 10 else obfuscation
         snippet = self.match.match.replace(matched, obfuscation)
-        self.content = "{}: {}".format(location, snippet)
+        self.content = "{}: {}".format(location, self.match.match)
+        self.obfuscated_content = "{}: {}".format(location, snippet)
