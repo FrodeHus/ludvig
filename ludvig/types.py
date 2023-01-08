@@ -2,7 +2,6 @@ import re
 from tarfile import TarFile
 from typing import List
 import yara
-from ludvig.utils import get_line_number
 
 
 class Layer:

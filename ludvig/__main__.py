@@ -7,7 +7,7 @@ from ludvig.client import DockerClient
 from ludvig.filesystem_scanner import FilesystemScanner
 from ludvig.image_scanner import ImageScanner
 from ludvig.rules.loader import load_yara_rules
-from ludvig.types import Finding, Image, Layer, YaraRuleMatch
+from ludvig.types import Finding, Image, Layer
 from rich.table import Table
 from rich.console import Console
 import yara

@@ -10,7 +10,6 @@ class FilesystemScanner:
         self.findings: List[Finding] = []
 
     def scan(self):
-        print("test")
         for filename in glob.iglob(os.path.join(self.__path, "**/*"), recursive=True):
             if os.path.isdir(filename):
                 continue
