@@ -10,7 +10,7 @@
       "request": "launch",
       "module": "ludvig",
       "justMyCode": true,
-      "args": ["sample:latest"]
+      "args": ["fs", "."]
     }
   ]
 }

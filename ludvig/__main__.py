@@ -2,45 +2,71 @@ import json
 import sys
 import tarfile
 import argparse
+from typing import List
 from ludvig.client import DockerClient
-from ludvig.image_scanner import SecretsScanner
+from ludvig.filesystem_scanner import FilesystemScanner
+from ludvig.image_scanner import ImageScanner
 from ludvig.rules.loader import load_yara_rules
-from ludvig.types import Image, Layer
+from ludvig.types import Finding, Image, Layer, YaraRuleMatch
 from rich.table import Table
 from rich.console import Console
+import yara
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("image", help="Container image to scan (ex: myimage:1.1)")
+    parser = argparse.ArgumentParser(prog="ludvig")
     parser.add_argument(
         "--deobfuscated",
         help="Shows any detected secrets without obfuscation",
         action="store_true",
     )
+    sub_parsers = parser.add_subparsers(dest="scan_type")
+    image_parser = sub_parsers.add_parser("image", help="scan container")
+    image_parser.add_argument("name", help="Container image to scan (ex: myimage:1.1)")
+    fs_parser = sub_parsers.add_parser("fs", help="scan filesystem")
+    fs_parser.add_argument("path", help="Path to scan")
     args = parser.parse_args()
 
     yara_rules = load_yara_rules()
-    with read_image(args.image) as image:
-        scanner = SecretsScanner(image, yara_rules)
-        scanner.scan()
-        table = Table(title="Findings")
-        table.add_column("Rule", style="cyan")
-        table.add_column("Filename", style="cyan")
-        table.add_column("Content", style="red")
-        for finding in scanner.findings:
-            table.add_row(
-                "{}\r\n[green]{}[/]".format(finding.match.rule_name, finding.category),
-                "{} {}".format(
-                    finding.filename, (":cross_mark:" if finding.whiteout else "")
-                ),
-                finding.obfuscated_content
-                if not args.deobfuscated
-                else finding.content,
-            )
+    if args.scan_type == "image":
+        findings = scan_image(args.name, yara_rules)
+    elif args.scan_type == "fs":
+        findings = scan_filesystem(args.path, yara_rules)
 
-        console = Console()
-        console.print(table)
+    output(findings, args.deobfuscated)
+    if len(findings) > 0:
+        sys.exit(2)
+
+
+def output(findings: List[Finding], obfuscate: bool = True):
+    table = Table(title="Findings")
+    table.add_column("Rule", style="cyan")
+    table.add_column("Filename", style="cyan")
+    table.add_column("Content", style="red")
+    for finding in findings:
+        table.add_row(
+            "{}\r\n[green]{}[/]".format(finding.match.rule_name, finding.category),
+            "{} {}".format(
+                finding.filename, (":cross_mark:" if finding.whiteout else "")
+            ),
+            finding.obfuscated_content if not obfuscate else finding.content,
+        )
+
+    console = Console()
+    console.print(table)
+
+
+def scan_image(image: str, rules: yara.Rules) -> List[Finding]:
+    with read_image(image) as image:
+        scanner = ImageScanner(image, rules)
+        scanner.scan()
+        return scanner.findings
+
+
+def scan_filesystem(path: str, rules: yara.Rules) -> List[Finding]:
+    scanner = FilesystemScanner(path, rules)
+    scanner.scan()
+    return scanner.findings
 
 
 def read_image(name: str) -> Image:

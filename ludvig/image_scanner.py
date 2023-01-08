@@ -6,7 +6,7 @@ from ludvig.types import Finding, Image, SecretFinding, YaraRuleMatch
 import yara
 
 
-class SecretsScanner:
+class ImageScanner:
     def __init__(self, image: Image, yara_rules: yara.Rules) -> None:
         self.image = image
         self.yara = yara_rules
