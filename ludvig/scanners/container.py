@@ -14,18 +14,18 @@ class ImageScanner:
 
     def scan(self):
         for layer in [l for l in self.image.layers if not l.empty_layer]:
-            layer_archive = self.image.image_archive.extractfile(
+            with self.image.image_archive.extractfile(
                 "{}/layer.tar".format(layer.id)
-            )
+            ) as layer_archive:
 
-            with tarfile.open(fileobj=layer_archive, mode="r") as lf:
-                for member in lf.getmembers():
-                    if os.path.basename(member.name).startswith(".wh."):
-                        self.__whiteout(member.name)
+                with tarfile.open(fileobj=layer_archive, mode="r") as lf:
+                    for member in lf.getmembers():
+                        if os.path.basename(member.name).startswith(".wh."):
+                            self.__whiteout(member.name)
 
-                    for _, finding in enumerate(self.__scan_secrets(lf, member)):
-                        if finding:
-                            self.findings.append(finding)
+                        for _, finding in enumerate(self.__scan_secrets(lf, member)):
+                            if finding:
+                                self.findings.append(finding)
 
     def __whiteout(self, filename: str):
         finding = [
