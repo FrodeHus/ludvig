@@ -4,10 +4,10 @@ import tarfile
 import argparse
 from typing import List
 from ludvig.client import DockerClient
-from ludvig.filesystem_scanner import FilesystemScanner
-from ludvig.image_scanner import ImageScanner
 from ludvig.rules.loader import load_yara_rules
 from ludvig.types import Finding, Image, Layer
+from ludvig.scanners.filesystem import FilesystemScanner
+from ludvig.scanners.container import ImageScanner
 from rich.table import Table
 from rich.console import Console
 import yara

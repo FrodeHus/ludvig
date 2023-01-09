@@ -10,7 +10,7 @@
       "request": "launch",
       "module": "ludvig",
       "justMyCode": true,
-      "args": ["fs", "."]
+      "args": ["fs", "./samples/dotnet"]
     }
   ]
 }

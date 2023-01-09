@@ -5,7 +5,7 @@ rule aws_access_key : aws secret
                 description = "Finds AWS Access Key IDs"
 
         strings:
-                $key = /(A3T[A-Z0-9]|AKIA|AGPA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/                                                                                                                                 nocase wide ascii fullword
+                $key = /(A3T[A-Z0-9]|AKIA|AGPA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/  nocase wide ascii fullword
         condition:
                 all of them
 }
