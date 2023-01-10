@@ -9,7 +9,7 @@ from ludvig.types import Finding, Image, Layer
 from ludvig.scanners.filesystem import FilesystemScanner
 from ludvig.scanners.container import ImageScanner
 from rich.table import Table
-from rich.console import Console
+from rich.console import Console, OverflowMethod
 import yara
 
 
@@ -44,7 +44,7 @@ def main():
 def output(findings: List[Finding], obfuscate: bool = True):
     table = Table(title="Findings")
     table.add_column("Rule", style="cyan")
-    table.add_column("Filename", style="cyan")
+    table.add_column("Filename", style="cyan", overflow="fold")
     table.add_column("Content", style="red")
     for finding in findings:
         table.add_row(

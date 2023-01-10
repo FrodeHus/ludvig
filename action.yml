@@ -1,0 +1,16 @@
+name: 'Ludvig'
+description: 'Scan for secrets and vulnerabilities'
+inputs:
+  path: 
+    description: 'Path to scan'
+    required: true
+    default: '.'
+outputs:
+  result: 
+    description: 'Scan results'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - fs
+    - ${{ inputs.path }}
