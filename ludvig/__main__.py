@@ -48,7 +48,7 @@ def output(findings: List[Finding], obfuscate: bool = True):
     table.add_column("Content", style="red")
     for finding in findings:
         table.add_row(
-            "{}\r\n[green]{}[/]".format(finding.match.rule_name, finding.category),
+            "{}\r\n[green]{}[/]".format(finding.match.rule_name, ", ".join(finding.match.tags)),
             "{} {}".format(
                 finding.filename, (":cross_mark:" if finding.whiteout else "")
             ),

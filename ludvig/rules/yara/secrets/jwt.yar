@@ -1,4 +1,4 @@
-rule jwt_token : jwt secret {
+rule JWT : jwt secret {
     meta:
         description = "Detects a JWT token "
     strings:

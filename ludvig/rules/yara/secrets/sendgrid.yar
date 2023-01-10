@@ -1,4 +1,4 @@
-rule sendgrid_api_token : sendgrid secret{
+rule SendgridAPIToken : sendgrid secret{
     meta:
         description = "Detects a Sendgrid API token"
     strings:

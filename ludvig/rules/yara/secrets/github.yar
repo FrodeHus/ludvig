@@ -1,4 +1,4 @@
-rule github_token : github secret
+rule GitHubToken : github secret
 {
 
         meta:
@@ -14,7 +14,7 @@ rule github_token : github secret
                 $token and any of ($s*)
 }
 
-rule github_refresh_token : github secret
+rule GitHubRefreshToken : github secret
 {
 
         meta:

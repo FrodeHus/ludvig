@@ -1,4 +1,4 @@
-rule twilio_api_key : twilio secret {
+rule TwilioAPIKey : twilio secret {
     meta:
         description = "Detects a Twilio API token"
     strings:

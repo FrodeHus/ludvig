@@ -1,4 +1,4 @@
-rule pulumi_api_token : pulumi secret {
+rule PulumiAPIToken : pulumi secret {
     meta:
         description = "Detects a Pulumi API token"
     strings:

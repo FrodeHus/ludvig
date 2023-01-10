@@ -1,4 +1,4 @@
-rule postman_api_token : postman secret {
+rule PostmanAPIToken : postman secret {
     meta:
         description = "Detects a Postman API token"
     strings:

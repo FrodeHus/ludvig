@@ -1,4 +1,4 @@
-rule databricks_api_token : databricks secret {
+rule DatabricksAPIToken : databricks secret {
     meta:
         description = "Detects a Databricks API token"
     strings:
