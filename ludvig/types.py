@@ -1,3 +1,4 @@
+from enum import Enum
 import re
 from tarfile import TarFile
 from typing import List
@@ -25,20 +26,27 @@ class Image:
     def __exit__(self, type, value, traceback):
         self.image_archive.close()
 
+class Severity(Enum):
+    TRIVIAL = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    CRITICAL = 4
 
 class RuleMatch:
     def __init__(
-        self, match: str, rule_name: str, category: str = None, tags: List[str] = None
+        self, match: str, rule_name: str, severity : Severity = Severity.MEDIUM, category: str = None, tags: List[str] = None
     ) -> None:
         self.match = match
         self.rule_name = rule_name
+        self.severity = severity
         self.tags = tags
         self.category = category
 
 
 class YaraRuleMatch(RuleMatch):
     def __init__(self, match: str, yara: yara.Match) -> None:
-        super().__init__(match, yara.rule, yara.namespace, yara.tags)
+        super().__init__(match, yara.rule, yara.meta["severity"], yara.namespace, yara.tags)
         self.__yara_match = yara
 
     def strings(self) -> List[str]:

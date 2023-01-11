@@ -5,7 +5,7 @@ import argparse
 from typing import List
 from ludvig.client import DockerClient
 from ludvig.rules.loader import load_yara_rules
-from ludvig.types import Finding, Image, Layer
+from ludvig.types import Finding, Image, Layer, Severity
 from ludvig.scanners.filesystem import FilesystemScanner
 from ludvig.scanners.container import ImageScanner
 from rich.table import Table
@@ -42,13 +42,13 @@ def main():
 
 
 def output(findings: List[Finding], obfuscate: bool = True):
-    table = Table(title="Findings")
-    table.add_column("Rule", style="cyan")
-    table.add_column("Filename", style="cyan", overflow="fold")
+    table = Table(title="Findings", show_lines=True)
+    table.add_column("Rule", style="white")
+    table.add_column("Filename", style="white", overflow="fold")
     table.add_column("Content", style="red")
     for finding in findings:
         table.add_row(
-            "{}\r\n[green]{}[/]".format(finding.match.rule_name, ", ".join(finding.match.tags)),
+            "{}: {}\r\n[gray50]{}[/]".format(color_coded_severity(finding.match.severity), finding.match.rule_name, ", ".join(finding.match.tags)),
             "{} {}".format(
                 finding.filename, (":cross_mark:" if finding.whiteout else "")
             ),
@@ -58,6 +58,16 @@ def output(findings: List[Finding], obfuscate: bool = True):
     console = Console()
     console.print(table)
 
+def color_coded_severity(severity : Severity):
+    match severity:
+        case "MEDIUM":
+            return "[yellow]{0:<10s}[/]".format(severity)
+        case "HIGH":
+            return "[magenta]{0:<10s}[/]".format(severity)
+        case "CRITICAL":
+            return "[red]{0:<10s}[/]".format(severity)
+        case _:
+            return "[bright_black]{0:<10s}[/]".format(severity)
 
 def scan_image(image: str, rules: yara.Rules) -> List[Finding]:
     with read_image(image) as image:

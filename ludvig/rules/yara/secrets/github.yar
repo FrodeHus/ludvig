@@ -3,6 +3,7 @@ rule GitHubToken : github secret
 
         meta:
                 description = "Finds GitHub API tokens"
+                severity = "CRITICAL"
 
         strings:
                 $s1 = "ghp_" nocase wide ascii private

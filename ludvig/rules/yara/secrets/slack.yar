@@ -1,6 +1,8 @@
 rule SlackWebHook : slack secret hook {
     meta:
         description = "Detects a Slack webhook"
+        severity = "HIGH"
+
     strings:
         $ = /https:\/\/hooks.slack.com\/services\/[A-Za-z0-9+\/]{44,48}/
     condition:

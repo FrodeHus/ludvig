@@ -2,6 +2,7 @@ rule PrivateKey : keys secret
 {
 	meta:
 		description = "Private key"
+		severity = "CRITICAL"
 
 	strings:
 		$ = "BEGIN PRIVATE KEY" ascii wide
