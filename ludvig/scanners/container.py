@@ -2,7 +2,7 @@ import base64
 import os
 import tarfile, re
 from typing import IO, List, Tuple
-from ludvig.types import Finding, Image, SecretFinding, YaraRuleMatch
+from ludvig.types import Finding, Image, Layer, SecretFinding, YaraRuleMatch
 import yara
 
 
@@ -23,7 +23,9 @@ class ImageScanner:
                         if os.path.basename(member.name).startswith(".wh."):
                             self.__whiteout(member.name)
 
-                        for _, finding in enumerate(self.__scan_secrets(lf, member)):
+                        for _, finding in enumerate(
+                            self.__scan_secrets(lf, member, layer)
+                        ):
                             if finding:
                                 self.findings.append(finding)
 
@@ -44,7 +46,9 @@ class ImageScanner:
             return image.extractfile(file)
         return None
 
-    def __scan_secrets(self, image: tarfile.TarFile, file: tarfile.TarInfo) -> Finding:
+    def __scan_secrets(
+        self, image: tarfile.TarFile, file: tarfile.TarInfo, layer: Layer = None
+    ) -> Finding:
         data = self.__extract_file(image, file)
 
         if not data:
@@ -59,7 +63,7 @@ class ImageScanner:
                 snippet = data.read(len(match.strings[0][2]) + prefix_offset).decode(
                     "utf-8"
                 )
-                yield SecretFinding(YaraRuleMatch(snippet, match), file.name)
+                yield SecretFinding(YaraRuleMatch(snippet, match), file.name, layer)
         except Exception as ex:
             return None
         finally:

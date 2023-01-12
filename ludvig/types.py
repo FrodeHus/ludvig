@@ -26,6 +26,7 @@ class Image:
     def __exit__(self, type, value, traceback):
         self.image_archive.close()
 
+
 class Severity(Enum):
     TRIVIAL = 0
     LOW = 1
@@ -33,9 +34,15 @@ class Severity(Enum):
     HIGH = 3
     CRITICAL = 4
 
+
 class RuleMatch:
     def __init__(
-        self, match: str, rule_name: str, severity : Severity = Severity.MEDIUM, category: str = None, tags: List[str] = None
+        self,
+        match: str,
+        rule_name: str,
+        severity: Severity = Severity.MEDIUM,
+        category: str = None,
+        tags: List[str] = None,
     ) -> None:
         self.match = match
         self.rule_name = rule_name
@@ -46,7 +53,9 @@ class RuleMatch:
 
 class YaraRuleMatch(RuleMatch):
     def __init__(self, match: str, yara: yara.Match) -> None:
-        super().__init__(match, yara.rule, yara.meta["severity"], yara.namespace, yara.tags)
+        super().__init__(
+            match, yara.rule, yara.meta["severity"], yara.namespace, yara.tags
+        )
         self.__yara_match = yara
 
     def strings(self) -> List[str]:
@@ -72,10 +81,11 @@ class Finding:
         self.content = None
         self.obfuscated_content = None
         self.whiteout = whiteout
+        self.comment = None
 
 
 class SecretFinding(Finding):
-    def __init__(self, rule: RuleMatch, filename: str) -> None:
+    def __init__(self, rule: RuleMatch, filename: str, layer: Layer = None) -> None:
         super().__init__(rule.category, rule, filename)
         strings = rule.strings()
         matched = strings[0]["plaintext"].decode("utf-8")
@@ -85,3 +95,7 @@ class SecretFinding(Finding):
         snippet = self.match.match.replace(matched, obfuscation)
         self.content = "{}: {}".format(location, self.match.match)
         self.obfuscated_content = "{}: {}".format(location, snippet)
+        if layer:
+            self.comment = "Created by: {}".format(
+                layer.created_by[: layer.created_by.find("#")]
+            )

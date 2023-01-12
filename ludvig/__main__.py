@@ -48,9 +48,15 @@ def output(findings: List[Finding], obfuscate: bool = True):
     table.add_column("Content", style="red")
     for finding in findings:
         table.add_row(
-            "{}: {}\r\n[gray50]{}[/]".format(color_coded_severity(finding.match.severity), finding.match.rule_name, ", ".join(finding.match.tags)),
-            "{} {}".format(
-                finding.filename, (":cross_mark:" if finding.whiteout else "")
+            "{}: {}\r\n[gray50]{}[/]".format(
+                color_coded_severity(finding.match.severity),
+                finding.match.rule_name,
+                ", ".join(finding.match.tags),
+            ),
+            "{} {}\r\n[gray50]{}[/]".format(
+                finding.filename,
+                (":cross_mark:" if finding.whiteout else ""),
+                finding.comment,
             ),
             finding.obfuscated_content if not obfuscate else finding.content,
         )
@@ -58,7 +64,8 @@ def output(findings: List[Finding], obfuscate: bool = True):
     console = Console()
     console.print(table)
 
-def color_coded_severity(severity : Severity):
+
+def color_coded_severity(severity: Severity):
     match severity:
         case "MEDIUM":
             return "[yellow]{0:<10s}[/]".format(severity)
@@ -68,6 +75,7 @@ def color_coded_severity(severity : Severity):
             return "[red]{0:<10s}[/]".format(severity)
         case _:
             return "[bright_black]{0:<10s}[/]".format(severity)
+
 
 def scan_image(image: str, rules: yara.Rules) -> List[Finding]:
     with read_image(image) as image:
