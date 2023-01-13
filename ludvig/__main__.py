@@ -53,16 +53,23 @@ def output(findings: List[Finding], obfuscate: bool = True):
                 finding.match.rule_name,
                 ", ".join(finding.match.tags),
             ),
-            "{} {}\r\n[gray50]{}[/]".format(
+            "{} {}\r\n[gray50]{}{}[/]".format(
                 finding.filename,
                 (":cross_mark:" if finding.whiteout else ""),
-                finding.comment,
+                prettify(finding.comment),
+                "\r\nRemoved by: {}".format(prettify(finding.removed_by))
+                if finding.removed_by
+                else "",
             ),
             finding.obfuscated_content if not obfuscate else finding.content,
         )
 
     console = Console()
     console.print(table)
+
+
+def prettify(s: str) -> str:
+    return s.replace("/bin/sh -c", "")
 
 
 def color_coded_severity(severity: Severity):

@@ -87,6 +87,7 @@ class Finding:
         self.obfuscated_content = None
         self.whiteout = whiteout
         self.comment = None
+        self.removed_by = None
 
 
 class SecretFinding(Finding):

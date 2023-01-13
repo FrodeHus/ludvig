@@ -21,7 +21,7 @@ class ImageScanner:
                 with tarfile.open(fileobj=layer_archive, mode="r") as lf:
                     for member in lf.getmembers():
                         if os.path.basename(member.name).startswith(".wh."):
-                            self.__whiteout(member.name)
+                            self.__whiteout(member.name, layer)
 
                         for _, finding in enumerate(
                             self.__scan_files(lf, member, layer)
@@ -29,7 +29,7 @@ class ImageScanner:
                             if finding:
                                 self.findings.append(finding)
 
-    def __whiteout(self, filename: str):
+    def __whiteout(self, filename: str, layer: Layer):
         finding = [
             finding
             for finding in self.findings
@@ -38,6 +38,7 @@ class ImageScanner:
 
         for f in finding:
             f.whiteout = True
+            f.removed_by = layer.created_by
 
     def __extract_file(
         self, image: tarfile.TarFile, file: tarfile.TarInfo
