@@ -117,7 +117,7 @@ def read_image(name: str) -> Image:
                 ),
             )
         )
-    return Image(manifest[0]["RepoTags"], layers, img)
+    return Image(manifest[0]["RepoTags"], layers, config["config"]["Env"], img)
 
 
 def get_layer_history(config: dict, layer_index: int):

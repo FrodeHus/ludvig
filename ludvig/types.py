@@ -14,11 +14,16 @@ class Layer:
 
 class Image:
     def __init__(
-        self, repo_tags: List[str], layers: List[Layer], image_archive: TarFile
+        self,
+        repo_tags: List[str],
+        layers: List[Layer],
+        environment: List[str],
+        image_archive: TarFile,
     ) -> None:
         self.repo_tags = repo_tags
         self.layers = layers
         self.image_archive = image_archive
+        self.environment = environment
 
     def __enter__(self):
         return self
