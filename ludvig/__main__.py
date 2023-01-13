@@ -102,10 +102,11 @@ def read_image(name: str) -> Image:
     with img.extractfile(manifest[0]["Config"]) as cf:
         config = json.load(cf)
 
+    file_layers = [layer for layer in config["history"] if not "empty_layer" in layer]
     layers = []
     for idx, layer in enumerate(manifest[0]["Layers"]):
         layer_id = layer[: layer.index("/")]
-        layer_history = get_layer_history(config, idx + 1)
+        layer_history = get_layer_history(file_layers, idx + 1)
         layers.append(
             Layer(
                 layer_id,
@@ -121,7 +122,7 @@ def read_image(name: str) -> Image:
 
 
 def get_layer_history(config: dict, layer_index: int):
-    return config["history"][layer_index]
+    return config[layer_index - 1]
 
 
 if __name__ == "__main__":

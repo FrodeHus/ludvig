@@ -24,7 +24,7 @@ class ImageScanner:
                             self.__whiteout(member.name)
 
                         for _, finding in enumerate(
-                            self.__scan_secrets(lf, member, layer)
+                            self.__scan_files(lf, member, layer)
                         ):
                             if finding:
                                 self.findings.append(finding)
@@ -46,7 +46,10 @@ class ImageScanner:
             return image.extractfile(file)
         return None
 
-    def __scan_secrets(
+    def __scan_environment(self, variables: List[str]) -> Finding:
+        pass
+
+    def __scan_files(
         self, image: tarfile.TarFile, file: tarfile.TarInfo, layer: Layer = None
     ) -> Finding:
         data = self.__extract_file(image, file)

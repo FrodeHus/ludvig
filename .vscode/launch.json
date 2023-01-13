@@ -10,7 +10,7 @@
       "request": "launch",
       "module": "ludvig",
       "justMyCode": true,
-      "args": ["image", "ludvig:latest"]
+      "args": ["image", "sample:latest"]
     }
   ]
 }
