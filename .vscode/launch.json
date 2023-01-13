@@ -10,7 +10,7 @@
       "request": "launch",
       "module": "ludvig",
       "justMyCode": true,
-      "args": ["image", "sample:latest"]
+      "args": ["fs", "/home/frode/src/github.com/easee/access-control-keycloak"]
     }
   ]
 }

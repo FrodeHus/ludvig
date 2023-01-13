@@ -69,6 +69,8 @@ def output(findings: List[Finding], obfuscate: bool = True):
 
 
 def prettify(s: str) -> str:
+    if s is None:
+        return s
     return s.replace("/bin/sh -c", "")
 
 
