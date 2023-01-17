@@ -56,8 +56,8 @@ def output(findings: List[Finding], obfuscate: bool = True):
             "{} {}\r\n[gray50]{}{}[/]".format(
                 finding.filename,
                 (":cross_mark:" if finding.whiteout else ""),
-                prettify(finding.comment),
-                "\r\nRemoved by: {}".format(prettify(finding.removed_by))
+                "Created by: [yellow]{}[/]".format(prettify(finding.comment)),
+                "\r\nRemoved by: [yellow]{}[/]".format(prettify(finding.removed_by))
                 if finding.removed_by
                 else "",
             ),

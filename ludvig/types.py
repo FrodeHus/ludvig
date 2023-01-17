@@ -102,6 +102,4 @@ class SecretFinding(Finding):
         self.content = "{}: {}".format(location, self.match.match)
         self.obfuscated_content = "{}: {}".format(location, snippet)
         if layer:
-            self.comment = "Created by: {}".format(
-                layer.created_by[: layer.created_by.find("#")]
-            )
+            self.comment = layer.created_by[: layer.created_by.find("#")]
