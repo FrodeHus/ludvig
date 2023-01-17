@@ -9,7 +9,8 @@ from ludvig.types import Finding, Image, Layer, Severity
 from ludvig.scanners.filesystem import FilesystemScanner
 from ludvig.scanners.container import ImageScanner
 from rich.table import Table
-from rich.console import Console, OverflowMethod
+from rich.progress import Progress
+from rich.console import Console
 import yara
 
 
@@ -31,10 +32,13 @@ def main():
     args = parser.parse_args()
 
     yara_rules = load_yara_rules(custom=args.custom_rules)
-    if args.scan_type == "image":
-        findings = scan_image(args.name, yara_rules)
-    elif args.scan_type == "fs":
-        findings = scan_filesystem(args.path, yara_rules)
+    with Progress() as progress:
+        scan_task = progress.add_task("[green]Scanning...", total=None)
+        if args.scan_type == "image":
+            findings = scan_image(args.name, yara_rules)
+        elif args.scan_type == "fs":
+            findings = scan_filesystem(args.path, yara_rules)
+        progress.remove_task(scan_task)
 
     output(findings, args.deobfuscated)
     if len(findings) > 0:
@@ -67,16 +71,20 @@ def output(findings: List[Finding], deobfuscated: bool = False):
     console = Console()
     console.print(table)
 
-def format_samples(finding : Finding, deobfuscated = False):
+
+def format_samples(finding: Finding, deobfuscated=False):
     output = ""
     for sample in finding.samples:
-        output += "[yellow]{0:<5d}[/]: {1}\r\n".format(sample.offset, sample.content if deobfuscated else sample.obfuscated_content)
+        output += "[yellow]{0:<5d}[/]: {1}\r\n".format(
+            sample.offset, sample.content if deobfuscated else sample.obfuscated_content
+        )
     return output
+
 
 def prettify(s: str) -> str:
     if s is None:
         return s
-    s = s[:s.index("#") if "#" in s else len(s)]
+    s = s[: s.index("#") if "#" in s else len(s)]
     return s.replace("/bin/sh -c", "")
 
 
