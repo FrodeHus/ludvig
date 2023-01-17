@@ -54,24 +54,32 @@ class ImageScanner:
         self, image: tarfile.TarFile, file: tarfile.TarInfo, layer: Layer = None
     ) -> Finding:
         data = self.__extract_file(image, file)
-
         if not data:
             return None
         try:
             matches = self.yara.match(data=data.read())
             for match in matches:
-                offset = match.strings[0][0]
-                prefix_offset = 10 if offset > 10 else offset
-                offset = offset - prefix_offset
+                orig_offset = match.strings[0][0]
+                prefix_offset = 10 if orig_offset > 10 else orig_offset
+                offset = orig_offset - prefix_offset
                 data.seek(offset)
-                snippet = data.read(len(match.strings[0][2]) + prefix_offset).decode(
-                    "utf-8"
-                )
+                try:
+                    snippet = data.read(len(match.strings[0][2]) + prefix_offset).decode(
+                        "utf-8"
+                    )
+                except UnicodeDecodeError as e:
+                    data.seek(orig_offset)
+                    snippet = data.read(len(match.strings[0][2])).decode("utf-8")
+                    # snippet = ''.join(format(x, '02x') for x in snippet)
                 yield SecretFinding(YaraRuleMatch(snippet, match), file.name, layer)
         except Exception as ex:
-            return None
+            return print(ex)
         finally:
             data.close()
+            
+    def __read_secret_sample(self, content : bytes) -> str:
+        content.fi
+        
 
     def __decode_content(self, content: str) -> str:
         for match in self.__possible_base64_encoding(content):

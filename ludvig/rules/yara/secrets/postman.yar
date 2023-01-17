@@ -4,7 +4,7 @@ rule PostmanAPIToken : postman secret {
         severity = "HIGH"
 
     strings:
-        $ = /PMAK-[a-f0-9]{24}-[a-f0-9]{34}/ nocase ascii fullword
+        $ = /PMAK-[a-f0-9]{24}-[a-f0-9]{34}/ ascii fullword wide
     condition:
         all of them
 }

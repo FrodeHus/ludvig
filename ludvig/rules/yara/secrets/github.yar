@@ -19,7 +19,7 @@ rule GitHubRefreshToken : github secret
 {
 
         meta:
-                description = "Finds GitHub API tokens"
+                description = "Finds GitHub refresh tokens"
 
         strings:
                 $s1 = "ghr_" nocase wide ascii private
