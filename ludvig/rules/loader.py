@@ -4,15 +4,15 @@ import os, glob
 
 
 def load_yara_rules(
-    namespaces: List[str] = ["secrets"], custom: str = None
+    namespaces: List[str] = ["secrets", "webshells"], custom: str = None
 ) -> yara.Rules:
     rule_path = os.path.dirname(__file__)
     sources = {}
     for ns in namespaces:
-        rule_path = os.path.join(rule_path, "yara", ns)
+        ns_rule_path = os.path.join(rule_path, "yara", ns)
         rule_codes = []
-        for rule_file in os.listdir(rule_path):
-            with open(os.path.join(rule_path, rule_file), "r") as r:
+        for rule_file in os.listdir(ns_rule_path):
+            with open(os.path.join(ns_rule_path, rule_file), "r") as r:
                 rule_code = r.read()
                 rule_codes.append(rule_code)
 

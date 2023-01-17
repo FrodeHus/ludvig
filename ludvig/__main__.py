@@ -41,7 +41,7 @@ def main():
         sys.exit(2)
 
 
-def output(findings: List[Finding], obfuscate: bool = True):
+def output(findings: List[Finding], deobfuscated: bool = False):
     table = Table(title="Findings", show_lines=True)
     table.add_column("Rule", style="white")
     table.add_column("Filename", style="white", overflow="fold")
@@ -61,12 +61,17 @@ def output(findings: List[Finding], obfuscate: bool = True):
                 if finding.removed_by
                 else "",
             ),
-            finding.obfuscated_content if not obfuscate else finding.content,
+            format_samples(finding, deobfuscated),
         )
 
     console = Console()
     console.print(table)
 
+def format_samples(finding : Finding, deobfuscated = False):
+    output = ""
+    for sample in finding.samples:
+        output += "{}\r\n".format(sample.content if deobfuscated else sample.obfuscated_content)
+    return output
 
 def prettify(s: str) -> str:
     if s is None:
