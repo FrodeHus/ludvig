@@ -71,6 +71,7 @@ def output(findings: List[Finding], obfuscate: bool = True):
 def prettify(s: str) -> str:
     if s is None:
         return s
+    s = s[:s.index("#") if "#" in s else len(s)]
     return s.replace("/bin/sh -c", "")
 
 
