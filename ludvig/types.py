@@ -65,7 +65,8 @@ class YaraRuleMatch(RuleMatch):
 
 
 class FindingSample:
-    def __init__(self, content: str) -> None:
+    def __init__(self, content: str, offset : int) -> None:
+        self.offset = offset
         self.content = content[:10] + "..." if len(content) > 10 else content
         obfuscated = "*" * len(content)
         self.obfuscated_content = obfuscated[:10] + "..." if len(obfuscated) > 10 else obfuscated
@@ -81,7 +82,7 @@ class FindingSample:
                 data = data.decode("utf-8")
             else:
                 data = "".join(format(x, "02x") for x in data)
-            samples.append(FindingSample(data))
+            samples.append(FindingSample(data, offset))
         return samples
 
 

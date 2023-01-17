@@ -70,7 +70,7 @@ def output(findings: List[Finding], deobfuscated: bool = False):
 def format_samples(finding : Finding, deobfuscated = False):
     output = ""
     for sample in finding.samples:
-        output += "{}\r\n".format(sample.content if deobfuscated else sample.obfuscated_content)
+        output += "[yellow]{0:<5d}[/]: {1}\r\n".format(sample.offset, sample.content if deobfuscated else sample.obfuscated_content)
     return output
 
 def prettify(s: str) -> str:
