@@ -4,7 +4,7 @@ import os, glob
 
 
 def load_yara_rules(
-    namespaces: List[str] = ["secrets", "webshells"], custom: str = None
+    namespaces: List[str] = ["secrets", "webshells", "sbom"], custom: str = None
 ) -> yara.Rules:
     rule_path = os.path.dirname(__file__)
     sources = {}
