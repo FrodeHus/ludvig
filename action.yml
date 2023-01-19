@@ -9,6 +9,10 @@ inputs:
     description: 'Path to scan'
     required: true
     default: '.'
+  customRulesPath:
+    description: 'Path to custom YARA rules'
+    required: false
+    default: '-'
 outputs:
   result: 
     description: 'Scan results'
@@ -16,5 +20,6 @@ runs:
   using: 'docker'
   image: 'docker://reothor/ludvig:latest'
   args:
+    - '--custom-rules ${{ inputs.customRulesPath }}'
     - fs
     - ${{ inputs.path }}
