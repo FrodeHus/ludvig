@@ -10,7 +10,7 @@ outputs:
     description: 'Scan results'
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'docker://reothor/ludvig:latest'
   args:
     - fs
     - ${{ inputs.path }}

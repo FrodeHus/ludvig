@@ -1,0 +1,11 @@
+name: "Ludvig test"
+on:
+  workflow_dispatch:
+    
+jobs:
+  ludvig:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run Ludvig from local definition
+      uses: ./
+  
