@@ -42,5 +42,7 @@ RUN apk add --no-cache -t .build-deps py3-setuptools \
 COPY ludvig ludvig
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-COPY entrypoint.sh .
-ENTRYPOINT ["entrypoint.sh"]
+COPY entrypoint.sh /
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["-h"]
