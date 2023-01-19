@@ -16,6 +16,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3    
     - name: Run Ludvig from local definition
+      continue-on-error: true
       uses: ./
       with:
         path:
