@@ -17,7 +17,7 @@ def load_yara_rules(
                 rule_codes.append(rule_code)
 
         sources[ns] = "\r\n".join(rule_codes)
-    if custom and custom != "-":
+    if custom:
         custom_rules = __load_custom_rules(custom)
         sources["custom"] = "\r\n".join(custom_rules)
 

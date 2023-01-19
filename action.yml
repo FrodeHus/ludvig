@@ -20,6 +20,5 @@ runs:
   using: 'docker'
   image: 'docker://reothor/ludvig:latest'
   args:
-    - '--custom-rules ${{ inputs.customRulesPath }}'
-    - fs
-    - ${{ inputs.path }}
+    - '-c ${{ inputs.customRulesPath }}'
+    - '-p ${{ inputs.path }}'
