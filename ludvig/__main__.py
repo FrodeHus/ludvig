@@ -42,7 +42,7 @@ def main():
         progress.remove_task(scan_task)
 
     output(findings, args.deobfuscated)
-    if len(findings) > 0:
+    if len([finding for finding in findings if finding.match.severity != Severity.UNKNOWN]) > 0:
         sys.exit(2)
 
 

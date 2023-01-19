@@ -33,11 +33,12 @@ class Image:
 
 
 class Severity(Enum):
-    TRIVIAL = 0
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
-    CRITICAL = 4
+    UNKNOWN = 0
+    TRIVIAL = 1
+    LOW = 2
+    MEDIUM = 3
+    HIGH = 4
+    CRITICAL = 5
 
 
 class RuleMatch:

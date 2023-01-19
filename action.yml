@@ -1,5 +1,9 @@
-name: 'Ludvig'
+name: 'Ludvig by Reothor'
 description: 'Scan for secrets and vulnerabilities'
+author: Frode Hus
+branding:
+  color: purple
+  icon: eye
 inputs:
   path: 
     description: 'Path to scan'
