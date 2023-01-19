@@ -20,9 +20,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3    
     - name: Run Ludvig 
-      uses: FrodeHus/ludvig@v0.1.1
+      uses: FrodeHus/ludvig@v0.1.3
       with:
-        path: <path to scan>
+        path: 
+            <path to scan>
+        customRulesPath:
+            <path to custom YARA rules - optional>
 ```
 
 

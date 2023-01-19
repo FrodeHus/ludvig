@@ -1,7 +1,14 @@
 name: "Ludvig test"
 on:
   workflow_dispatch:
-    
+    inputs:
+      path:
+        description: 'Path to scan'
+        required: true
+        default: 'samples/dotnet'
+      customRulesPath:
+        description: 'Path to custom rules'
+        required: false
 jobs:
   ludvig:
     runs-on: ubuntu-latest
@@ -12,5 +19,7 @@ jobs:
       uses: ./
       with:
         path:
-          samples/dotnet
+          '${{ github.event.inputs.path }}'
+        customRulesPath:
+          '${{ github.event.inputs.path }}'
   
