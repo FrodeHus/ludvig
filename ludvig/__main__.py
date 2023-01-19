@@ -1,14 +1,16 @@
 import json
+import pprint
 import sys
 import tarfile
 import argparse
 from typing import List
 from ludvig.client import DockerClient
 from ludvig.rules.loader import load_yara_rules
-from ludvig.types import Finding, Image, Layer
+from ludvig.types import Finding, Image, Layer, Severity
 from ludvig.scanners.filesystem import FilesystemScanner
 from ludvig.scanners.container import ImageScanner
 from rich.table import Table
+from rich.progress import Progress
 from rich.console import Console
 import yara
 
@@ -31,32 +33,72 @@ def main():
     args = parser.parse_args()
 
     yara_rules = load_yara_rules(custom=args.custom_rules)
-    if args.scan_type == "image":
-        findings = scan_image(args.name, yara_rules)
-    elif args.scan_type == "fs":
-        findings = scan_filesystem(args.path, yara_rules)
+    with Progress() as progress:
+        scan_task = progress.add_task("[green]Scanning...", total=None)
+        if args.scan_type == "image":
+            findings = scan_image(args.name, yara_rules)
+        elif args.scan_type == "fs":
+            findings = scan_filesystem(args.path, yara_rules)
+        progress.remove_task(scan_task)
 
     output(findings, args.deobfuscated)
     if len(findings) > 0:
         sys.exit(2)
 
 
-def output(findings: List[Finding], obfuscate: bool = True):
-    table = Table(title="Findings")
-    table.add_column("Rule", style="cyan")
-    table.add_column("Filename", style="cyan")
+def output(findings: List[Finding], deobfuscated: bool = False):
+    table = Table(title="Findings", show_lines=True)
+    table.add_column("Rule", style="white")
+    table.add_column("Filename", style="white", overflow="fold")
     table.add_column("Content", style="red")
     for finding in findings:
         table.add_row(
-            "{}\r\n[green]{}[/]".format(finding.match.rule_name, finding.category),
-            "{} {}".format(
-                finding.filename, (":cross_mark:" if finding.whiteout else "")
+            "{}: {}\r\n[gray50]{}[/]".format(
+                color_coded_severity(finding.match.severity),
+                finding.match.rule_name,
+                ", ".join(finding.match.tags),
             ),
-            finding.obfuscated_content if not obfuscate else finding.content,
+            "{} {}\r\n[gray50]{}{}[/]".format(
+                finding.filename,
+                (":cross_mark:" if finding.whiteout else ""),
+                "Created by: [yellow]{}[/]".format(prettify(finding.comment)),
+                "\r\nRemoved by: [yellow]{}[/]".format(prettify(finding.removed_by))
+                if finding.removed_by
+                else "",
+            ),
+            format_samples(finding, deobfuscated),
         )
 
     console = Console()
     console.print(table)
+
+
+def format_samples(finding: Finding, deobfuscated=False):
+    output = ""
+    for sample in finding.samples:
+        output += "[yellow]{0:<5d}[/]: {1}\r\n".format(
+            sample.offset, sample.content if deobfuscated else sample.obfuscated_content
+        )
+    return output
+
+
+def prettify(s: str) -> str:
+    if s is None:
+        return s
+    s = s[: s.index("#") if "#" in s else len(s)]
+    return s.replace("/bin/sh -c", "")
+
+
+def color_coded_severity(severity: Severity):
+    match severity:
+        case "MEDIUM":
+            return "[yellow]{0:<10s}[/]".format(severity)
+        case "HIGH":
+            return "[magenta]{0:<10s}[/]".format(severity)
+        case "CRITICAL":
+            return "[red]{0:<10s}[/]".format(severity)
+        case _:
+            return "[bright_black]{0:<10s}[/]".format(severity)
 
 
 def scan_image(image: str, rules: yara.Rules) -> List[Finding]:
@@ -84,10 +126,11 @@ def read_image(name: str) -> Image:
     with img.extractfile(manifest[0]["Config"]) as cf:
         config = json.load(cf)
 
+    file_layers = [layer for layer in config["history"] if not "empty_layer" in layer]
     layers = []
     for idx, layer in enumerate(manifest[0]["Layers"]):
         layer_id = layer[: layer.index("/")]
-        layer_history = get_layer_history(config, idx + 1)
+        layer_history = get_layer_history(file_layers, idx + 1)
         layers.append(
             Layer(
                 layer_id,
@@ -99,11 +142,11 @@ def read_image(name: str) -> Image:
                 ),
             )
         )
-    return Image(manifest[0]["RepoTags"], layers, img)
+    return Image(manifest[0]["RepoTags"], layers, config["config"]["Env"], img)
 
 
 def get_layer_history(config: dict, layer_index: int):
-    return config["history"][layer_index]
+    return config[layer_index - 1]
 
 
 if __name__ == "__main__":

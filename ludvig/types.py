@@ -1,6 +1,7 @@
+from enum import Enum
 import re
 from tarfile import TarFile
-from typing import List
+from typing import IO, List
 import yara
 
 
@@ -13,11 +14,16 @@ class Layer:
 
 class Image:
     def __init__(
-        self, repo_tags: List[str], layers: List[Layer], image_archive: TarFile
+        self,
+        repo_tags: List[str],
+        layers: List[Layer],
+        environment: List[str],
+        image_archive: TarFile,
     ) -> None:
         self.repo_tags = repo_tags
         self.layers = layers
         self.image_archive = image_archive
+        self.environment = environment
 
     def __enter__(self):
         return self
@@ -26,54 +32,86 @@ class Image:
         self.image_archive.close()
 
 
+class Severity(Enum):
+    TRIVIAL = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    CRITICAL = 4
+
+
 class RuleMatch:
     def __init__(
-        self, match: str, rule_name: str, category: str = None, tags: List[str] = None
+        self,
+        rule_name: str,
+        severity: Severity = Severity.MEDIUM,
+        category: str = None,
+        tags: List[str] = None,
     ) -> None:
-        self.match = match
         self.rule_name = rule_name
+        self.severity = severity
         self.tags = tags
         self.category = category
 
 
 class YaraRuleMatch(RuleMatch):
-    def __init__(self, match: str, yara: yara.Match) -> None:
-        super().__init__(match, yara.rule, yara.namespace, yara.tags)
-        self.__yara_match = yara
+    def __init__(self, yara: yara.Match) -> None:
+        super().__init__(
+            yara.rule,
+            yara.meta["severity"] if "severity" in yara.meta else "UNKNOWN",
+            yara.namespace,
+            yara.tags,
+        )
 
-    def strings(self) -> List[str]:
-        strings = []
-        for string_match in self.__yara_match.strings:
-            strings.append(
-                {
-                    "offset": string_match[0],
-                    "identifier": string_match[1],
-                    "plaintext": string_match[2],
-                }
-            )
-        return strings
+
+class FindingSample:
+    def __init__(self, content: str, offset : int) -> None:
+        self.offset = offset
+        self.content = content[:10] + "..." if len(content) > 10 else content
+        obfuscated = "*" * len(content)
+        self.obfuscated_content = obfuscated[:10] + "..." if len(obfuscated) > 10 else obfuscated
+
+    @classmethod
+    def from_yara_match(cls, match: yara.Match) -> List["FindingSample"]:
+        samples = []
+        for str_match in match.strings:
+            offset = str_match[0]
+            identifier = str_match[1]
+            data = str_match[2]
+            if data.isascii():
+                data = data.decode("utf-8")
+            else:
+                data = "".join(format(x, "02x") for x in data)
+            samples.append(FindingSample(data, offset))
+        return samples
 
 
 class Finding:
     def __init__(
-        self, category: str, match: RuleMatch, filename: str, whiteout: bool = False
+        self,
+        category: str,
+        match: RuleMatch,
+        samples: List[FindingSample],
+        filename: str,
+        whiteout: bool = False,
     ) -> None:
         self.category = category
         self.match = match
         self.filename = filename
-        self.content = None
-        self.obfuscated_content = None
+        self.samples = samples
         self.whiteout = whiteout
+        self.comment = None
+        self.removed_by = None
 
 
 class SecretFinding(Finding):
-    def __init__(self, rule: RuleMatch, filename: str) -> None:
-        super().__init__(rule.category, rule, filename)
-        strings = rule.strings()
-        matched = strings[0]["plaintext"].decode("utf-8")
-        location = strings[0]["offset"]
-        obfuscation = "*" * len(matched)
-        obfuscation = obfuscation[:7] + "..." if len(obfuscation) > 10 else obfuscation
-        snippet = self.match.match.replace(matched, obfuscation)
-        self.content = "{}: {}".format(location, self.match.match)
-        self.obfuscated_content = "{}: {}".format(location, snippet)
+    def __init__(
+        self,
+        rule: RuleMatch,
+        samples: List[FindingSample],
+        filename: str,
+        layer: Layer = None,
+    ) -> None:
+        super().__init__(rule.category, rule, samples, filename)
+        if layer:
+            self.comment = layer.created_by[: layer.created_by.find("#")]

@@ -1,5 +1,4 @@
 FROM python:alpine
-WORKDIR /ludvig
 ENV YARA_VERSION 4.2.3
 ENV YARA_PY_VERSION 4.2.3
 RUN apk add --no-cache openssl file jansson bison python3 tini su-exec

@@ -15,6 +15,7 @@ rule aws_account_id : aws secret
 
         meta:
                 description = "Finds AWS Account IDs"
+                severity = "CRITICAL"
 
         strings:
                 $ = /aws.account.id/                nocase wide ascii private

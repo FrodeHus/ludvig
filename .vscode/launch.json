@@ -10,7 +10,7 @@
       "request": "launch",
       "module": "ludvig",
       "justMyCode": true,
-      "args": ["fs", "./samples/dotnet"]
+      "args": ["image", "sample:latest"]
     }
   ]
 }

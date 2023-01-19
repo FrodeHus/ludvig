@@ -1,7 +1,8 @@
-rule private_key : keys secret
+rule PrivateKey : keys secret
 {
 	meta:
 		description = "Private key"
+		severity = "CRITICAL"
 
 	strings:
 		$ = "BEGIN PRIVATE KEY" ascii wide
@@ -10,7 +11,7 @@ rule private_key : keys secret
 		all of them
 }
 
-rule private_rsa_key : keys secret
+rule PrivateRSAKey : keys secret
 {
 	meta:
 		description = "RSA private key"
@@ -22,7 +23,7 @@ rule private_rsa_key : keys secret
 		all of them
 }
 
-rule open_ssh_key : keys secret
+rule OpenSSHKey : keys secret
 {
 	meta:
 		description = "OpenSSH private key"

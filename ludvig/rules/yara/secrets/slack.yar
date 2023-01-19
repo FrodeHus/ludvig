@@ -1,13 +1,15 @@
-rule slack_web_hook : slack secret hook {
+rule SlackWebHook : slack secret hook {
     meta:
         description = "Detects a Slack webhook"
+        severity = "HIGH"
+
     strings:
         $ = /https:\/\/hooks.slack.com\/services\/[A-Za-z0-9+\/]{44,48}/
     condition:
         all of them
 }
 
-rule slack_access_token : slack secret {
+rule SlackAccessToken : slack secret {
     meta:
         description = "Detects a Slack access token"
     strings:

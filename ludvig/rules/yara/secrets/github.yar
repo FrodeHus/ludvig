@@ -1,8 +1,9 @@
-rule github_token : github secret
+rule GitHubToken : github secret
 {
 
         meta:
                 description = "Finds GitHub API tokens"
+                severity = "CRITICAL"
 
         strings:
                 $s1 = "ghp_" nocase wide ascii private
@@ -14,11 +15,11 @@ rule github_token : github secret
                 $token and any of ($s*)
 }
 
-rule github_refresh_token : github secret
+rule GitHubRefreshToken : github secret
 {
 
         meta:
-                description = "Finds GitHub API tokens"
+                description = "Finds GitHub refresh tokens"
 
         strings:
                 $s1 = "ghr_" nocase wide ascii private
