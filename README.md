@@ -4,13 +4,30 @@ Secret scanner
 
 Named after Kjell Aukrust's character Ludvig who thinks everything is dangerous and is scared of the dark during the day.
 
-Very much Work In Progress - won't give you much at this point :P
+Very much Work In Progress 
 
-Requires:
+## GitHub Action usage
 
-- `yara`
+```yaml
+name: "Ludvig test"
+on:
+  workflow_dispatch:
+    
+jobs:
+  ludvig:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3    
+    - name: Run Ludvig 
+      uses: FrodeHus/ludvig@v0.1.1
+      with:
+        path: <path to scan>
+```
 
-## Usage
+
+
+## CLI Usage
 
 The general usage of the tool is: `python -m ludvig [--deobfuscated] [--custom-rules <PATH>] <scan type> <args>`
 
