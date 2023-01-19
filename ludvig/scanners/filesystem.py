@@ -1,6 +1,6 @@
 from typing import List
 import yara, os, glob
-from ludvig.types import Finding, SecretFinding, YaraRuleMatch
+from ludvig.types import Finding, FindingSample, SecretFinding, YaraRuleMatch
 
 
 class FilesystemScanner:
@@ -17,15 +17,9 @@ class FilesystemScanner:
                 try:
                     matches = self.__rules.match(data=f.read())
                     for match in matches:
-                        offset = match.strings[0][0]
-                        prefix_offset = 15 if offset > 15 else offset
-                        offset = offset - prefix_offset
-                        f.seek(offset)
-                        snippet = f.read(
-                            len(match.strings[0][2]) + prefix_offset
-                        ).decode("utf-8")
+                        samples = FindingSample.from_yara_match(match)
                         self.findings.append(
-                            SecretFinding(YaraRuleMatch(snippet, match), filename)
+                            SecretFinding(YaraRuleMatch(match), samples, filename)
                         )
                 except Exception as ex:
                     print(ex)
