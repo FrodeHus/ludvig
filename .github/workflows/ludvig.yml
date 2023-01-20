@@ -12,6 +12,7 @@ on:
       level:
         description: 'Only report findings above the given level'
         required: false
+        type: choice
         default: "MEDIUM"
         options:
           - "UNKNOWN"
