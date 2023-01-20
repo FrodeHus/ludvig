@@ -1,4 +1,4 @@
-# ludvig
+# Ludvig
 
 Secret scanner
 
@@ -46,10 +46,4 @@ Scan a container: `python -m ludvig image <image>`
 
 Scan the filesystem: `python -m ludvig fs <path>`
 
-## Docker
 
-Build: `docker build -t ludvig:latest .`
-
-Run: `docker run -t -v /var/run/docker.sock:/var/run/docker.sock ludvig:latest sample:latest`
-
-NOTE: Requires mounting the Docker socket to be able to read Docker images
