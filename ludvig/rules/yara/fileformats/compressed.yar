@@ -13,5 +13,5 @@ rule CompressedFile {
                 $tar_posix = { 75 73 74 61  }
 
         condition:
-                any of ($gzip, $zip, $bzip, $z, $pkzip) at 0 or ($tar_posix)
+                (for any of ($gzip, $zip, $bzip, $z, $pkzip) : ($ at 0)) or ($tar_posix)
 }

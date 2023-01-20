@@ -25,24 +25,30 @@ def main():
     parser.add_argument(
         "--custom-rules", help="Path to custom YARA rules (need to have .yar extension)"
     )
+    parser.add_argument(
+        "--level",
+        help="Only report findings above the given level",
+        choices=[e.name for e in Severity],
+        default="MEDIUM",
+    )
     sub_parsers = parser.add_subparsers(dest="scan_type")
     image_parser = sub_parsers.add_parser("image", help="scan container")
     image_parser.add_argument("name", help="Container image to scan (ex: myimage:1.1)")
     fs_parser = sub_parsers.add_parser("fs", help="scan filesystem")
     fs_parser.add_argument("path", help="Path to scan")
     args = parser.parse_args()
-
+    severity_level = Severity[args.level]
     yara_rules = load_yara_rules(custom=args.custom_rules)
     with Progress() as progress:
         scan_task = progress.add_task("[green]Scanning...", total=None)
         if args.scan_type == "image":
-            findings = scan_image(args.name, yara_rules)
+            findings = scan_image(args.name, yara_rules, severity_level)
         elif args.scan_type == "fs":
-            findings = scan_filesystem(args.path, yara_rules)
+            findings = scan_filesystem(args.path, yara_rules, severity_level)
         progress.remove_task(scan_task)
 
-    output(findings, args.deobfuscated)
-    if len([finding for finding in findings if finding.match.severity != Severity.UNKNOWN]) > 0:
+    if len(findings) > 0:
+        output(findings, args.deobfuscated)
         sys.exit(2)
 
 
@@ -101,15 +107,19 @@ def color_coded_severity(severity: Severity):
             return "[bright_black]{0:<10s}[/]".format(severity)
 
 
-def scan_image(image: str, rules: yara.Rules) -> List[Finding]:
+def scan_image(
+    image: str, rules: yara.Rules, severity_level: Severity = Severity.MEDIUM
+) -> List[Finding]:
     with read_image(image) as image:
-        scanner = ImageScanner(image, rules)
+        scanner = ImageScanner(image, rules, severity_level)
         scanner.scan()
         return scanner.findings
 
 
-def scan_filesystem(path: str, rules: yara.Rules) -> List[Finding]:
-    scanner = FilesystemScanner(path, rules)
+def scan_filesystem(
+    path: str, rules: yara.Rules, severity_level: Severity = Severity.MEDIUM
+) -> List[Finding]:
+    scanner = FilesystemScanner(path, rules, severity_level)
     scanner.scan()
     return scanner.findings
 

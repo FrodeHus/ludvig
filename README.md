@@ -23,9 +23,11 @@ jobs:
       uses: FrodeHus/ludvig@v0.1.3
       with:
         path: 
-            <path to scan>
+          '<path to scan>'
         customRulesPath:
-            <path to custom YARA rules - optional>
+          '<path to custom YARA rules - optional>'
+        level:
+          '<UNKNOWN,TRIVIAL,LOW,MEDIUM,HIGH,CRITICAL - optional (default: MEDIUM)>'
 ```
 
 
@@ -37,6 +39,8 @@ The general usage of the tool is: `python -m ludvig [--deobfuscated] [--custom-r
 `--deobfuscated` will reveal any secrets found, default is to obfuscate the secret
 
 `--custom-rules <PATH>` lets you specify your own YARA rules (loads all `.yar` files under the specified `<PATH>`)
+
+`--level <LEVEL>` Only report findings above the given level (UNKNOWN,TRIVIAL,LOW,MEDIUM,HIGH,CRITICAL - default: MEDIUM)
 
 ### Container scan
 

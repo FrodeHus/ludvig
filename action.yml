@@ -12,7 +12,10 @@ inputs:
   customRulesPath:
     description: 'Path to custom YARA rules'
     required: false
-    default: '-'
+  level:
+    description: 'Only report findings above the given level [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
+    default: "MEDIUM"
+    required: false
 outputs:
   result: 
     description: 'Scan results'
@@ -22,3 +25,4 @@ runs:
   args:
     - '-c ${{ inputs.customRulesPath }}'
     - '-p ${{ inputs.path }}'
+    - '-l ${{ inputs.level }}'
