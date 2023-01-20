@@ -27,7 +27,7 @@ jobs:
         customRulesPath:
           '<path to custom YARA rules - optional>'
         level:
-          '<UNKNOWN,TRIVIAL,LOW,MEDIUM,HIGH,CRITICAL - optional (default: MEDIUM)>'
+          '<UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL - optional (default: MEDIUM)>'
 ```
 
 
