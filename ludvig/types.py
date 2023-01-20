@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 import re
 from tarfile import TarFile
 from typing import IO, List
@@ -32,7 +32,7 @@ class Image:
         self.image_archive.close()
 
 
-class Severity(Enum):
+class Severity(IntEnum):
     UNKNOWN = 0
     TRIVIAL = 1
     LOW = 2

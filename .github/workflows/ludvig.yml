@@ -9,6 +9,17 @@ on:
       customRulesPath:
         description: 'Path to custom rules'
         required: false
+      level:
+        description: 'Only report findings above the given level'
+        required: false
+        default: "MEDIUM"
+        options:
+          - "UNKNOWN"
+          - "LOW"
+          - "MEDIUM"
+          - "HIGH"
+          - "CRITICAL"
+
 jobs:
   ludvig:
     runs-on: ubuntu-latest
@@ -23,4 +34,6 @@ jobs:
           '${{ github.event.inputs.path }}'
         customRulesPath:
           '${{ github.event.inputs.customRulesPath }}'
+        level:
+          '${{ github.event.inputs.level }}'
   

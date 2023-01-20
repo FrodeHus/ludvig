@@ -1,11 +1,12 @@
 from typing import List
 import yara, os, glob
-from ludvig.types import Finding, FindingSample, SecretFinding, YaraRuleMatch
+from ludvig.types import Finding, FindingSample, SecretFinding, Severity, YaraRuleMatch
 
 
 class FilesystemScanner:
-    def __init__(self, path: str, rules: yara.Rules) -> None:
+    def __init__(self, path: str, rules: yara.Rules, severity_level : Severity = Severity.MEDIUM) -> None:
         self.__path = path
+        self.severity_level = severity_level
         self.__rules = rules
         self.findings: List[Finding] = []
 
@@ -17,6 +18,9 @@ class FilesystemScanner:
                 try:
                     matches = self.__rules.match(data=f.read())
                     for match in matches:
+                        severity = Severity[match.meta["severity"]] if "severity" in match.meta else Severity.UNKNOWN
+                        if severity < self.severity_level:
+                            continue
                         samples = FindingSample.from_yara_match(match)
                         self.findings.append(
                             SecretFinding(YaraRuleMatch(match), samples, filename)

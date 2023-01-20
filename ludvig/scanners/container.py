@@ -2,14 +2,15 @@ import base64
 import os
 import tarfile, re
 from typing import IO, List, Tuple
-from ludvig.types import Finding, FindingSample, Image, Layer, SecretFinding, YaraRuleMatch
+from ludvig.types import Finding, FindingSample, Image, Layer, SecretFinding, Severity, YaraRuleMatch
 import yara
 
 
 class ImageScanner:
-    def __init__(self, image: Image, yara_rules: yara.Rules) -> None:
+    def __init__(self, image: Image, yara_rules: yara.Rules, severity_level : Severity = Severity.MEDIUM) -> None:
         self.image = image
         self.yara = yara_rules
+        self.severity_level = severity_level
         self.findings: List[Finding] = []
 
     def scan(self):
@@ -59,6 +60,10 @@ class ImageScanner:
         try:
             matches = self.yara.match(data=data.read())
             for match in matches:
+                
+                severity = Severity[match.meta["severity"]] if "severity" in match.meta else Severity.UNKNOWN
+                if severity < self.severity_level:
+                    continue
                 samples = FindingSample.from_yara_match(match)
                 yield SecretFinding(YaraRuleMatch(match), samples, file.name, layer)
         except Exception as ex:

@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
-while getopts "hc:p:" o; do
+while getopts "hc:p:l:" o; do
     case "${o}" in
         h)
-            echo "-c <custom rules path (optional)> -p <path to scan>"
+            echo "-c <custom rules path (optional)> -p <path to scan> -l <level (optional)>"
             exit 0
         ;;
         c)
@@ -12,12 +12,21 @@ while getopts "hc:p:" o; do
         p)
             export path=${OPTARG}
         ;;
+        l)
+            export level=${OPTARG}
+        ;;
     esac
 done
-
+ARGS=""
 if [ $customRules ]; then
     customRulesArg="--custom-rules $customRules"
+    ARGS="$ARGS $customRulesArg"
+fi
+
+if [ $level ]; then
+    levelArg="--level $level"
+    ARGS="$ARGS $levelArg"
 fi
 
 
-python3 -m ludvig ${customRulesArg} fs ${path}
+python3 -m ludvig ${ARGS} fs ${path}
