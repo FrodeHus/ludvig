@@ -4,11 +4,10 @@ import tarfile
 import argparse
 from typing import List
 from ludvig.client import DockerClient
-from ludvig.outputs.pretty import PrettyConsole
 from ludvig.rules.loader import load_yara_rules
 from ludvig.types import Finding, Image, Layer, Severity
-from ludvig.scanners.filesystem import FilesystemScanner
-from ludvig.scanners.container import ImageScanner
+from ludvig.scanners import FilesystemScanner, Finding, Image, ImageScanner
+from ludvig.outputs import PrettyConsole, JsonOutput
 from rich.progress import Progress
 import yara
 
@@ -24,7 +23,7 @@ def main():
         "--custom-rules", help="Path to custom YARA rules (need to have .yar extension)"
     )
     parser.add_argument(
-        "--output", help="Output format", choices=["pretty"], default="pretty"
+        "--output", help="Output format", choices=["pretty", "json"], default="pretty"
     )
     parser.add_argument(
         "--level",
@@ -56,6 +55,8 @@ def main():
 def get_output_provider(provider : str, findings : List[Finding], deobuscated = False):
     if provider == "pretty":
         return PrettyConsole(findings, deobuscated)
+    elif provider == "json":
+        return JsonOutput(findings, deobuscated)
     
 def scan_image(
     image: str, rules: yara.Rules, severity_level: Severity = Severity.MEDIUM
