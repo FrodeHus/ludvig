@@ -113,12 +113,13 @@ class Finding:
         samples: List[FindingSample],
         filename: str,
     ) -> None:
-        self.category = category
+        self.name = "{}/{}".format(category, match.rule_name)
         self.match = match
         self.filename = filename
         self.samples = samples
+        self.severity = match.severity
         self.comment = None
-        self.properties = {}
+        self.properties = {category: category}
 
 
 class SecretFinding(Finding):
