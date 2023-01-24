@@ -1,10 +1,12 @@
+import json
 from typing import List
-from ludvig.types import Finding
+from ludvig.types import Finding, FindingEncoder
+
 
 class JsonOutput:
-    def __init__(self, findings : List[Finding], deobfuscated = False) -> None:
+    def __init__(self, findings: List[Finding]) -> None:
         self.findings = findings
-        self.deobfuscated = deobfuscated
-    
+
     def output(self):
-        pass
+        output = json.dumps(self.findings, indent=4, cls=FindingEncoder)
+        print(output)

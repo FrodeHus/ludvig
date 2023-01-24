@@ -4,9 +4,8 @@ from ludvig.types import Finding, Severity
 from rich.console import Console
 
 class PrettyConsole:
-    def __init__(self, findings : List[Finding], deobuscated = False) -> None:
+    def __init__(self, findings : List[Finding]) -> None:
         self.findings = findings
-        self.deobfuscated = deobuscated
     
     def output(self):
         table = Table(title="Findings", show_lines=True)
@@ -28,16 +27,16 @@ class PrettyConsole:
                     if finding.removed_by
                     else "",
                 ),
-                self.__format_samples(finding, self.deobfuscated),
+                self.__format_samples(finding),
             )
 
         console = Console()
         console.print(table)
-    def __format_samples(self, finding: Finding, deobfuscated=False):
+    def __format_samples(self, finding: Finding):
         output = ""
         for sample in finding.samples:
             output += "[yellow]{0:<5d}[/]: {1}\r\n".format(
-                sample.offset, sample.content if deobfuscated else sample.obfuscated_content
+                sample.offset, sample.content
             )
         return output
 
