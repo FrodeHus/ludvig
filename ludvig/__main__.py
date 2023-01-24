@@ -7,9 +7,9 @@ from knack.commands import CommandGroup
 
 class LudvigCommandsLoader(CLICommandsLoader):
     def load_command_table(self, args):
-        with CommandGroup(self, "image", "ludvig.commands.image#{}") as g:
+        with CommandGroup(self, "image", "ludvig.commands.image#{}", help="Container image operations") as g:
             g.command("scan", "scan")
-        with CommandGroup(self, "fs", "ludvig.commands.filesystem#{}") as g:
+        with CommandGroup(self, "fs", "ludvig.commands.filesystem#{}", help="File system operations") as g:
             g.command("scan", "scan")
         return OrderedDict(self.command_table)
 

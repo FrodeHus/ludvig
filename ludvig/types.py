@@ -50,12 +50,14 @@ class RuleMatch:
         rule_name: str,
         severity: Severity = Severity.MEDIUM,
         category: str = None,
+        description : str = None,
         tags: List[str] = None,
     ) -> None:
         self.rule_name = rule_name
         self.severity = severity
         self.tags = tags
         self.category = category
+        self.description = description
 
 
 class YaraRuleMatch(RuleMatch):
@@ -64,6 +66,7 @@ class YaraRuleMatch(RuleMatch):
             yara.rule,
             yara.meta["severity"] if "severity" in yara.meta else "UNKNOWN",
             yara.namespace,
+            yara.meta["description"] if "description" in yara.meta else None,
             yara.tags,
         )
 
