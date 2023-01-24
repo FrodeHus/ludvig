@@ -1,7 +1,6 @@
 import json
 import tarfile
 from ludvig.client import DockerClient
-from ludvig.rules.loader import load_yara_rules
 from ludvig.scanners import ImageScanner
 from ludvig.types import Image, Layer, Severity
 
@@ -16,9 +15,8 @@ def scan(repository : str, custom_rules : str = None, severity_level : Severity 
     """
     if isinstance(severity_level, str):
         severity_level = Severity[severity_level]
-    yara_rules = load_yara_rules(custom=custom_rules)
     with __read_image(repository) as image:
-        scanner = ImageScanner(image, yara_rules, severity_level, deobfuscated)
+        scanner = ImageScanner(image, severity_level, deobfuscated, custom_rules)
         scanner.scan()
         if output_sarif:
             from ludvig.outputs import SarifConverter

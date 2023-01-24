@@ -1,13 +1,8 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 import json
-import re
 from tarfile import TarFile
-from typing import IO, List
+from typing import List
 import yara
-
-class BaseScanner:
-    def __init__(self, deobfuscated = False) -> None:
-        self.deobfuscated = deobfuscated
 
 class Layer:
     def __init__(self, id: str, created_by: str = None, empty_layer=False) -> None:
@@ -106,15 +101,13 @@ class Finding:
         match: RuleMatch,
         samples: List[FindingSample],
         filename: str,
-        whiteout: bool = False,
     ) -> None:
         self.category = category
         self.match = match
         self.filename = filename
         self.samples = samples
-        self.whiteout = whiteout
         self.comment = None
-        self.removed_by = None
+        self.properties = []
         
 class SecretFinding(Finding):
     def __init__(
@@ -122,11 +115,12 @@ class SecretFinding(Finding):
         rule: RuleMatch,
         samples: List[FindingSample],
         filename: str,
-        layer: Layer = None,
+        **kwargs,
     ) -> None:
         super().__init__(rule.category, rule, samples, filename)
-        if layer:
-            self.comment = layer.created_by[: layer.created_by.find("#")]
+        for arg in kwargs:
+            self.properties.append({arg: kwargs[arg]})
+            
 
 class FindingEncoder(json.JSONEncoder):
     def default(self, o: Finding):

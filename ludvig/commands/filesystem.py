@@ -1,4 +1,3 @@
-from ludvig.rules.loader import load_yara_rules
 from ludvig.types import Severity
 from ludvig.scanners import FilesystemScanner
 
@@ -19,8 +18,7 @@ def scan(
     """
     if isinstance(severity_level, str):
         severity_level = Severity[severity_level]
-    yara_rules = load_yara_rules(custom=custom_rules)
-    scanner = FilesystemScanner(path, yara_rules, severity_level, deobfuscated)
+    scanner = FilesystemScanner(path, severity_level, deobfuscated, custom_rules)
     scanner.scan()
     if output_sarif:
             from ludvig.outputs import SarifConverter
