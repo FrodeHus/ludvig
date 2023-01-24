@@ -67,8 +67,9 @@ class YaraRuleMatch(RuleMatch):
 
 
 class FindingSample:
-    def __init__(self, content: str, offset : int, deobfuscated = False) -> None:
+    def __init__(self, content: str, offset : int, deobfuscated = False, line_number : int = -1) -> None:
         self.offset = offset
+        self.line_number = line_number
         content = content[:10] + "..." if len(content) > 10 else content
         if deobfuscated:
             self.content = content
@@ -80,7 +81,7 @@ class FindingSample:
         return json.dumps(self, default=lambda o: o.__dict__)
 
     @classmethod
-    def from_yara_match(cls, match: yara.Match, deobfuscated = False) -> List["FindingSample"]:
+    def from_yara_match(cls, match: yara.Match, deobfuscated = False, line_number : int = -1) -> List["FindingSample"]:
         samples = []
         for str_match in match.strings:
             offset = str_match[0]
@@ -90,7 +91,7 @@ class FindingSample:
                 data = data.decode("utf-8")
             else:
                 data = "".join(format(x, "02x") for x in data)
-            samples.append(FindingSample(data, offset, deobfuscated))
+            samples.append(FindingSample(data, offset, deobfuscated, line_number))
         return samples
 
 
@@ -107,7 +108,7 @@ class Finding:
         self.filename = filename
         self.samples = samples
         self.comment = None
-        self.properties = []
+        self.properties = {}
         
 class SecretFinding(Finding):
     def __init__(
@@ -119,7 +120,7 @@ class SecretFinding(Finding):
     ) -> None:
         super().__init__(rule.category, rule, samples, filename)
         for arg in kwargs:
-            self.properties.append({arg: kwargs[arg]})
+            self.properties[arg] = kwargs[arg]
             
 
 class FindingEncoder(json.JSONEncoder):

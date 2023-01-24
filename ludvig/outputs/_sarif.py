@@ -60,10 +60,7 @@ class SarifConverter:
     @staticmethod
     def to_region(finding: Finding) -> sarif.Region:
         return sarif.Region(
-            start_line=1,
-            start_column=finding.samples[0].offset,
-            end_line=1,
-            end_column=finding.samples[0].offset + len(finding.samples[0].content),
+            start_line=finding.samples[0].line_number,
         )
 
     @staticmethod
