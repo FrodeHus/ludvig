@@ -3,6 +3,7 @@ rule PrivateKey : keys secret
 	meta:
 		description = "Private key"
 		severity = "CRITICAL"
+        id = "LS0009"
 
 	strings:
 		$ = "BEGIN PRIVATE KEY" ascii wide
@@ -15,6 +16,8 @@ rule PrivateRSAKey : keys secret
 {
 	meta:
 		description = "RSA private key"
+		severity = "CRITICAL"
+        id = "LS0010"
 
 	strings:
 		$ = "BEGIN RSA PRIVATE KEY" ascii wide
@@ -27,6 +30,8 @@ rule OpenSSHKey : keys secret
 {
 	meta:
 		description = "OpenSSH private key"
+		severity = "CRITICAL"
+        id = "LS0011"
 
 	strings:
 		$ = "BEGIN OPENSSH PRIVATE KEY"

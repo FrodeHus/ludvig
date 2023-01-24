@@ -1,21 +1,23 @@
-rule aws_access_key : aws secret
+rule AwsAccessKey : aws secret
 {
 
         meta:
                 description = "Finds AWS Access Key IDs"
-
+                severity = "CRITICAL"
+                id = "LS0001"
         strings:
                 $key = /(A3T[A-Z0-9]|AKIA|AGPA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/  nocase wide ascii fullword
         condition:
                 all of them
 }
 
-rule aws_account_id : aws secret
+rule AwsAccountId : aws secret
 {
 
         meta:
                 description = "Finds AWS Account IDs"
-                severity = "CRITICAL"
+                severity = "HIGH"
+                id = "LS0002"
 
         strings:
                 $ = /aws.account.id/                nocase wide ascii private
@@ -24,11 +26,13 @@ rule aws_account_id : aws secret
                 all of them
 }
 
-rule aws_secret_access_key : aws secret
+rule AwsSecretAccessKey : aws secret
 {
 
         meta:
                 description = "Finds AWS Secret Access Keys"
+                severity = "CRITICAL"
+                id = "LS0003"
 
         strings:
                 $ = /aws.secret.access.key/ nocase wide ascii private
@@ -37,11 +41,13 @@ rule aws_secret_access_key : aws secret
                 all of them
 }
 
-rule aws_session_token : aws secret
+rule AwsSessionToken : aws secret
 {
 
         meta:
                 description = "Finds AWS Session Tokens"
+                severity = "CRITICAL"
+                id = "LS0004"
 
         strings:
                 $ = /aws.session.token/         nocase wide ascii private

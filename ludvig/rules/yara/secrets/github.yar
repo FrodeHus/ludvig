@@ -4,6 +4,7 @@ rule GitHubToken : github secret
         meta:
                 description = "Finds GitHub API tokens"
                 severity = "CRITICAL"
+                id = "LS0006"
 
         strings:
                 $s1 = "ghp_" nocase wide ascii private
@@ -20,6 +21,8 @@ rule GitHubRefreshToken : github secret
 
         meta:
                 description = "Finds GitHub refresh tokens"
+                severity = "CRITICAL"
+                id = "LS0007"
 
         strings:
                 $s1 = "ghr_" nocase wide ascii private
