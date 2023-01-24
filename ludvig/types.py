@@ -38,11 +38,10 @@ class Image:
 
 class Severity(IntEnum):
     UNKNOWN = 0
-    TRIVIAL = 1
-    LOW = 2
-    MEDIUM = 3
-    HIGH = 4
-    CRITICAL = 5
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    CRITICAL = 4
 
 
 class RuleMatch:
