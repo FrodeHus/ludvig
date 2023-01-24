@@ -1,16 +1,21 @@
 import base64
 import os
 import tarfile, re
-from typing import IO, List, Tuple
-from ludvig.types import BaseScanner, Finding, FindingSample, Image, Layer, SecretFinding, Severity, YaraRuleMatch
-import yara
+from typing import IO, List
+from ludvig.types import Finding, Image, Layer, Severity
+from ._common import BaseScanner
 
 
 class ImageScanner(BaseScanner):
-    def __init__(self, image: Image, yara_rules: yara.Rules, severity_level : Severity = Severity.MEDIUM, deobfuscated = False) -> None:
-        super().__init__(deobfuscated)
+    def __init__(
+        self,
+        image: Image,
+        severity_level: Severity = Severity.MEDIUM,
+        deobfuscated=False,
+        custom_rules: str = None,
+    ) -> None:
+        super().__init__(deobfuscated, custom_rules)
         self.image = image
-        self.yara = yara_rules
         self.severity_level = severity_level
         self.findings: List[Finding] = []
 
@@ -39,8 +44,8 @@ class ImageScanner(BaseScanner):
         ]
 
         for f in finding:
-            f.whiteout = True
-            f.removed_by = layer.created_by
+            f.properties.append({"removed_by": layer.created_by})
+            f.properties.append({"whiteout": True})
 
     def __extract_file(
         self, image: tarfile.TarFile, file: tarfile.TarInfo
@@ -59,19 +64,14 @@ class ImageScanner(BaseScanner):
         if not data:
             return None
         try:
-            matches = self.yara.match(data=data.read())
-            for match in matches:
-                
-                severity = Severity[match.meta["severity"]] if "severity" in match.meta else Severity.UNKNOWN
-                if severity < self.severity_level:
-                    continue
-                samples = FindingSample.from_yara_match(match, self.deobfuscated)
-                yield SecretFinding(YaraRuleMatch(match), samples, file.name, layer)
+            yield self.scan_file_data(
+                data, file.name, docker_instruction=layer.created_by
+            )
         except Exception as ex:
             return print(ex)
         finally:
             data.close()
-            
+
     def __decode_content(self, content: str) -> str:
         for match in self.__possible_base64_encoding(content):
             try:
