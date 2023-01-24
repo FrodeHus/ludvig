@@ -10,7 +10,7 @@
       "request": "launch",
       "module": "ludvig",
       "justMyCode": true,
-      "args": ["image", "sample:latest"]
+      "args": ["image", "scan", "--repository", "sample:latest", "--output-sarif", "test.json"]
     }
   ]
 }
