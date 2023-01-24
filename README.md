@@ -44,10 +44,10 @@ The general usage of the tool is: `python -m ludvig [--deobfuscated] [--custom-r
 
 ### Container scan
 
-Scan a container: `python -m ludvig image --repository <image>`
+Scan a container: `python -m ludvig image scan --repository <image>`
 
 ### Filesystem scan
 
-Scan the filesystem: `python -m ludvig fs --path <path>`
+Scan the filesystem: `python -m ludvig fs scan --path <path>`
 
 
