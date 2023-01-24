@@ -22,6 +22,5 @@ class FilesystemScanner(BaseScanner):
             if os.path.isdir(filename):
                 continue
             with open(filename, "rb") as f:
-                finding = self.scan_file_data(f, filename)
-                if finding:
-                    self.findings.append(finding)
+                findings = self.scan_file_data(f, filename)
+                self.findings.extend(findings)

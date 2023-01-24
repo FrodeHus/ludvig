@@ -29,12 +29,12 @@ class ImageScanner(BaseScanner):
                     for member in lf.getmembers():
                         if os.path.basename(member.name).startswith(".wh."):
                             self.__whiteout(member.name, layer)
-
-                        for _, finding in enumerate(
-                            self.__scan_files(lf, member, layer)
-                        ):
-                            if finding:
-                                self.findings.append(finding)
+                        data = self.__extract_file(lf, member)
+                        if not data:                            
+                            continue
+                        findings = self.scan_file_data(data, member.name, docker_instruction=layer.created_by)
+                        data.close()
+                        self.findings.extend(findings)
 
     def __whiteout(self, filename: str, layer: Layer):
         finding = [
@@ -44,8 +44,8 @@ class ImageScanner(BaseScanner):
         ]
 
         for f in finding:
-            f.properties.append({"removed_by": layer.created_by})
-            f.properties.append({"whiteout": True})
+            f.properties["removed_by"] = layer.created_by
+            f.properties["whiteout"] = True
 
     def __extract_file(
         self, image: tarfile.TarFile, file: tarfile.TarInfo
@@ -56,21 +56,6 @@ class ImageScanner(BaseScanner):
 
     def __scan_environment(self, variables: List[str]) -> Finding:
         pass
-
-    def __scan_files(
-        self, image: tarfile.TarFile, file: tarfile.TarInfo, layer: Layer = None
-    ) -> Finding:
-        data = self.__extract_file(image, file)
-        if not data:
-            return None
-        try:
-            yield self.scan_file_data(
-                data, file.name, docker_instruction=layer.created_by
-            )
-        except Exception as ex:
-            return print(ex)
-        finally:
-            data.close()
 
     def __decode_content(self, content: str) -> str:
         for match in self.__possible_base64_encoding(content):
