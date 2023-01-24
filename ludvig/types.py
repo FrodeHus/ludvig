@@ -1,9 +1,13 @@
 from enum import Enum, IntEnum
+import json
 import re
 from tarfile import TarFile
 from typing import IO, List
 import yara
 
+class BaseScanner:
+    def __init__(self, deobfuscated = False) -> None:
+        self.deobfuscated = deobfuscated
 
 class Layer:
     def __init__(self, id: str, created_by: str = None, empty_layer=False) -> None:
@@ -66,14 +70,20 @@ class YaraRuleMatch(RuleMatch):
 
 
 class FindingSample:
-    def __init__(self, content: str, offset : int) -> None:
+    def __init__(self, content: str, offset : int, deobfuscated = False) -> None:
         self.offset = offset
-        self.content = content[:10] + "..." if len(content) > 10 else content
-        obfuscated = "*" * len(content)
-        self.obfuscated_content = obfuscated[:10] + "..." if len(obfuscated) > 10 else obfuscated
+        content = content[:10] + "..." if len(content) > 10 else content
+        if deobfuscated:
+            self.content = content
+        else:
+            obfuscated = "*" * len(content)
+            self.content = obfuscated[:10] + "..." if len(obfuscated) > 10 else obfuscated
+
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
 
     @classmethod
-    def from_yara_match(cls, match: yara.Match) -> List["FindingSample"]:
+    def from_yara_match(cls, match: yara.Match, deobfuscated = False) -> List["FindingSample"]:
         samples = []
         for str_match in match.strings:
             offset = str_match[0]
@@ -83,7 +93,7 @@ class FindingSample:
                 data = data.decode("utf-8")
             else:
                 data = "".join(format(x, "02x") for x in data)
-            samples.append(FindingSample(data, offset))
+            samples.append(FindingSample(data, offset, deobfuscated))
         return samples
 
 
@@ -103,8 +113,7 @@ class Finding:
         self.whiteout = whiteout
         self.comment = None
         self.removed_by = None
-
-
+        
 class SecretFinding(Finding):
     def __init__(
         self,
@@ -116,3 +125,7 @@ class SecretFinding(Finding):
         super().__init__(rule.category, rule, samples, filename)
         if layer:
             self.comment = layer.created_by[: layer.created_by.find("#")]
+
+class FindingEncoder(json.JSONEncoder):
+    def default(self, o: Finding):
+        return o.__dict__

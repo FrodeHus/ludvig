@@ -4,11 +4,10 @@ import tarfile
 import argparse
 from typing import List
 from ludvig.client import DockerClient
-from ludvig.outputs.pretty import PrettyConsole
 from ludvig.rules.loader import load_yara_rules
 from ludvig.types import Finding, Image, Layer, Severity
-from ludvig.scanners.filesystem import FilesystemScanner
-from ludvig.scanners.container import ImageScanner
+from ludvig.scanners import FilesystemScanner, Finding, Image, ImageScanner
+from ludvig.outputs import PrettyConsole, JsonOutput
 from rich.progress import Progress
 import yara
 
@@ -24,7 +23,7 @@ def main():
         "--custom-rules", help="Path to custom YARA rules (need to have .yar extension)"
     )
     parser.add_argument(
-        "--output", help="Output format", choices=["pretty"], default="pretty"
+        "--output", help="Output format", choices=["pretty", "json"], default="pretty"
     )
     parser.add_argument(
         "--level",
@@ -43,33 +42,47 @@ def main():
     with Progress() as progress:
         scan_task = progress.add_task("[green]Scanning...", total=None)
         if args.scan_type == "image":
-            findings = scan_image(args.name, yara_rules, severity_level)
+            findings = scan_image(
+                args.name, yara_rules, severity_level, args.deobfuscated
+            )
         elif args.scan_type == "fs":
-            findings = scan_filesystem(args.path, yara_rules, severity_level)
+            findings = scan_filesystem(
+                args.path, yara_rules, severity_level, args.deobfuscated
+            )
         progress.remove_task(scan_task)
 
     if len(findings) > 0:
-        output_provider = get_output_provider(args.output, findings, args.deobfuscated)
+        output_provider = get_output_provider(args.output, findings)
         output_provider.output()
         sys.exit(2)
 
-def get_output_provider(provider : str, findings : List[Finding], deobuscated = False):
+
+def get_output_provider(provider: str, findings: List[Finding]):
     if provider == "pretty":
-        return PrettyConsole(findings, deobuscated)
-    
+        return PrettyConsole(findings)
+    elif provider == "json":
+        return JsonOutput(findings)
+
+
 def scan_image(
-    image: str, rules: yara.Rules, severity_level: Severity = Severity.MEDIUM
+    image: str,
+    rules: yara.Rules,
+    severity_level: Severity = Severity.MEDIUM,
+    deobfuscated=False,
 ) -> List[Finding]:
     with read_image(image) as image:
-        scanner = ImageScanner(image, rules, severity_level)
+        scanner = ImageScanner(image, rules, severity_level, deobfuscated)
         scanner.scan()
         return scanner.findings
 
 
 def scan_filesystem(
-    path: str, rules: yara.Rules, severity_level: Severity = Severity.MEDIUM
+    path: str,
+    rules: yara.Rules,
+    severity_level: Severity = Severity.MEDIUM,
+    deobfuscated=False,
 ) -> List[Finding]:
-    scanner = FilesystemScanner(path, rules, severity_level)
+    scanner = FilesystemScanner(path, rules, severity_level, deobfuscated)
     scanner.scan()
     return scanner.findings
 
