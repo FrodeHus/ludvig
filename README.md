@@ -40,14 +40,14 @@ The general usage of the tool is: `python -m ludvig [--deobfuscated] [--custom-r
 
 `--custom-rules <PATH>` lets you specify your own YARA rules (loads all `.yar` files under the specified `<PATH>`)
 
-`--level <LEVEL>` Only report findings above the given level (UNKNOWN,TRIVIAL,LOW,MEDIUM,HIGH,CRITICAL - default: MEDIUM)
+`--level <LEVEL>` Only report findings above the given level (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL - default: MEDIUM)
 
 ### Container scan
 
-Scan a container: `python -m ludvig image <image>`
+Scan a container: `python -m ludvig image --repository <image>`
 
 ### Filesystem scan
 
-Scan the filesystem: `python -m ludvig fs <path>`
+Scan the filesystem: `python -m ludvig fs --path <path>`
 
 
