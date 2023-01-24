@@ -1,69 +1,98 @@
+from types import MappingProxyType
 from typing import List
-from ludvig.types import Finding, Severity, YaraRuleMatch
-import yara
+from ludvig.types import Finding, FindingSample, RuleMatch, Severity, YaraRuleMatch
+import sarif_om as sarif
+from jschema_to_python.to_json import to_json
 
-class Driver:
-    def __init__(self, name : str, information_url : str) -> None:
-        self.name = name
-        self.full_name = name
-        self.information_url = information_url
-        self.rules : List[Rule] = []
-        
-class Tool:
-    def __init__(self, driver : Driver) -> None:
-        self.driver = driver
+level_mapper = MappingProxyType(
+    {
+        "CRITICAL": "error",
+        "HIGH": "error",
+        "MEDIUM": "warning",
+        "LOW": "warning",
+        "UNKNOWN": "note",
+    }
+)
 
-class Artifact:
-    def __init__(self, location : str) -> None:
-        self.location = location
-        
-class Rule:
-    def __init__(self, id : str, description: str, help_uri : str = None, category = None) -> None:
-        self.id = id
-        self.short_description = {
-            "text": description
-        }
-        self.help_uri = help_uri,
-        self.properties = {
-            "category": category
-        }
-        
+ludvig_tool = sarif.Tool(
+    driver=sarif.ToolComponent(
+        name="Ludvig by Reothor SARIF Report",
+        full_name="Ludvig by Reothor SARIF Report",
+        information_uri="https://github.com/frodehus/ludvig",
+    )
+)
+
+
+class SarifConverter:
+    def from_findings(findings: List[Finding]) -> str:
+        results = SarifConverter.findings_to_results(findings)
+        ludvig_tool.driver.rules = SarifConverter.rules_from_findings(findings)
+        run = sarif.Run(tool=ludvig_tool, results=results)
+        return to_json(
+            sarif.SarifLog(
+                version="2.1.0",
+                schema_uri="http://json.schemastore.org/sarif-2.1.0-rtm.4",
+                runs=[run],
+            )
+        )
+
     @staticmethod
-    def from_findings(findings : List[Finding]) -> List["Rule"]:
+    def to_sarif_rule_id(rule_match: RuleMatch) -> str:
+        return "_".join((rule_match.category.lower(), rule_match.rule_name.lower()))
+
+    @staticmethod
+    def to_sarif_level(finding: Finding) -> str:
+        return level_mapper.get(finding.match.severity, "none")
+
+    @staticmethod
+    def findings_to_results(findings: List[Finding]) -> List[sarif.Result]:
+        results = []
+        for finding in findings:
+            result = sarif.Result(
+                rule_id=SarifConverter.to_sarif_rule_id(finding.match),
+                level=SarifConverter.to_sarif_level(finding),
+                locations=[SarifConverter.to_sarif_location(finding)],
+                message=SarifConverter.to_message(finding.samples),
+            )
+            results.append(result)
+        return results
+
+    @staticmethod
+    def to_region(finding: Finding) -> sarif.Region:
+        return sarif.Region(
+            start_line=1,
+            start_column=finding.samples[0].offset,
+            end_line=1,
+            end_column=finding.samples[0].offset + len(finding.samples[0].content),
+        )
+
+    @staticmethod
+    def to_sarif_location(finding: Finding) -> sarif.Location:
+        return sarif.Location(
+            physical_location=sarif.PhysicalLocation(
+                artifact_location=sarif.ArtifactLocation(
+                    uri=finding.filename, uri_base_id="EXECUTIONROOT"
+                ),
+                region=SarifConverter.to_region(finding),
+            ),
+        )
+
+    @staticmethod
+    def to_message(samples: List[FindingSample]) -> sarif.Message:
+        return sarif.Message(text=",".join([s.content for s in samples]))
+
+    @staticmethod
+    def rules_from_findings(findings: List[Finding]) -> List[sarif.ReportingDescriptor]:
         rules = []
         for finding in findings:
             rule_id = finding.match.rule_name
             description = finding.match.description
-            category = finding.match.category
-            rule = Rule(rule_id, description, help_uri=None, category=category)
+            rule = sarif.ReportingDescriptor(
+                id=SarifConverter.to_sarif_rule_id(finding.match),
+                name=rule_id,
+                short_description=sarif.MultiformatMessageString(
+                    text=description, markdown=description
+                ),
+            )
             rules.append(rule)
-        return list({r.id: r for r in rules}.values())
-        
-class Result:
-    def __init__(self, rule_id : str, level : str, locations : List[str]) -> None:
-        self.rule_id = rule_id
-        self.level = level
-        self.locations = locations
-
-class Run:
-    def __init__(self, tool : Tool = None, artifacts : List[Artifact] = None, results : List[Result] = None) -> None:
-        self.tool = tool or Tool(Driver("Ludvig", "https://github.com/frodehus/ludvig"))
-        self.artifacts = artifacts or []
-        self.results = results or []
-
-class SarifLog:
-    def __init__(self, runs : List[Run]) -> None:
-        self.version = "2.1.0"
-        self.schema = "http://json.schemastore.org/sarif-2.1.0-rtm.4"
-        self.runs = runs
-        
-    @classmethod   
-    def from_findings(cls, findings : List[Finding]) -> "SarifLog":
-        run = Run()
-        run.tool.driver.rules = Rule.from_findings(findings)
-        for finding in findings:                      
-            result = Result(finding.match.rule_name, finding.match.severity, [finding.filename])
-            run.results.append(result)
-            
-        log = SarifLog([run])
-        return log
+        return rules
