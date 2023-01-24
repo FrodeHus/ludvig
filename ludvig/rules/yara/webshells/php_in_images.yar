@@ -2,13 +2,14 @@
     Finds PHP code in JP(E)Gs, GIFs, PNGs.
     Magic numbers via Wikipedia.
 */
-rule PHPInImage : php webshell
+rule PhpInImage : php webshell
 {
     meta:
         author      = "Vlad https://github.com/vlad-s"
         date        = "2016/07/18"
         description = "Finds image files w/ PHP code in images"
         severity    = "CRITICAL"
+        id          = "LM0001"
     strings:
         $gif = /^GIF8[79]a/
         $jfif = { ff d8 ff e? 00 10 4a 46 49 46 }
