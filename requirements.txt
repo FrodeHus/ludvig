@@ -17,3 +17,4 @@ toml==0.10.2
 tomli==2.0.1
 urllib3==1.26.14
 yara-python==4.2.3
+knack==0.10.1
