@@ -26,7 +26,7 @@ class ImageScanner(BaseScanner):
     def list_whiteout(self):
         whiteouts = []
         for (
-            file,
+            _,
             file_name,
             layer_id,
             layer_created_by,
@@ -39,7 +39,6 @@ class ImageScanner(BaseScanner):
                         "filename": file_name.replace(".wh.", ""),
                     }
                 )
-            file.close()
 
         return whiteouts
 
@@ -53,8 +52,7 @@ class ImageScanner(BaseScanner):
             if file_name.lower() == filename:
                 logger.info("found %s - extracting to %s ...", filename, output)
                 with open(output, "wb") as f:
-                    f.write(file.read())
-                file.close()
+                    f.write(file.file_data.read())
                 return
 
     def scan(self):
@@ -67,9 +65,8 @@ class ImageScanner(BaseScanner):
             if os.path.basename(file_name).startswith(".wh."):
                 self.__whiteout(file_name, layer_created_by)
             findings = self.scan_file_data(
-                file, file_name, docker_instruction=layer_created_by
+                file.file_data, file_name, docker_instruction=layer_created_by
             )
-            file.close()
             self.findings.extend(findings)
 
     def __whiteout(self, filename: str, layer_created_by: str):

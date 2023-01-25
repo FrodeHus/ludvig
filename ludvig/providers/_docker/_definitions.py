@@ -1,5 +1,5 @@
 from tarfile import TarFile
-from typing import List
+from typing import IO, List
 
 
 class Layer:
@@ -27,3 +27,15 @@ class Image:
 
     def __exit__(self, type, value, traceback):
         self.image_archive.close()
+
+
+class LayerFile:
+    def __init__(self, file_data: IO[bytes]) -> None:
+        self.file_data = file_data
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if self.file_data:
+            self.file_data.close()
