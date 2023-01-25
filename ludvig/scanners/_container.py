@@ -2,7 +2,8 @@ import base64
 import os
 import tarfile, re
 from typing import IO, List
-from ludvig.types import Finding, Image, Layer, Severity
+from ludvig.types import Finding, Severity
+from ludvig.providers import ContainerProvider
 from ._common import BaseScanner
 from knack.log import get_logger
 
@@ -12,78 +13,66 @@ logger = get_logger(__name__)
 class ImageScanner(BaseScanner):
     def __init__(
         self,
-        image: Image,
+        file_provider: ContainerProvider,
         severity_level: Severity = Severity.MEDIUM,
         deobfuscated=False,
         custom_rules: str = None,
     ) -> None:
         super().__init__(deobfuscated, custom_rules)
-        self.image = image
+        self.file_provider = file_provider
         self.severity_level = severity_level
         self.findings: List[Finding] = []
 
     def list_whiteout(self):
         whiteouts = []
-        for layer in [l for l in self.image.layers if not l.empty_layer]:
-            logger.info("layer %s: %s", layer.id, layer.created_by)
-            with self.image.image_archive.extractfile(
-                "{}/layer.tar".format(layer.id)
-            ) as layer_archive:
-                with tarfile.open(fileobj=layer_archive, mode="r") as lf:
-                    try:
-                        for member in lf.getmembers():
-                            if os.path.basename(member.name).startswith(".wh."):
-                                whiteouts.append(
-                                    {
-                                        "layer": layer.id,
-                                        "created_by": layer.created_by,
-                                        "filename": member.name.replace(".wh.", ""),
-                                    }
-                                )
-                    except:
-                        logger.error("failed to list files for layer %s", layer.id)
+        for (
+            file,
+            file_name,
+            layer_id,
+            layer_created_by,
+        ) in self.file_provider.get_files():
+            if os.path.basename(file_name).startswith(".wh."):
+                whiteouts.append(
+                    {
+                        "layer": layer_id,
+                        "created_by": layer_created_by,
+                        "filename": file_name.replace(".wh.", ""),
+                    }
+                )
+            file.close()
 
         return whiteouts
 
     def extract_file(self, filename: str, output: str):
-        for layer in [l for l in self.image.layers if not l.empty_layer]:
-            with self.image.image_archive.extractfile(
-                "{}/layer.tar".format(layer.id)
-            ) as layer_archive:
-                with tarfile.open(fileobj=layer_archive, mode="r") as lf:
-                    for member in lf.getmembers():
-                        if member.name.lower() == filename:
-                            logger.info(
-                                "found %s - extracting to %s ...", filename, output
-                            )
-                            data = self.__extract_file(lf, member)
-                            with open(output, "wb") as f:
-                                f.write(data.read())
-                            return
+        for (
+            file,
+            file_name,
+            _,
+            _,
+        ) in self.file_provider.get_files():
+            if file_name.lower() == filename:
+                logger.info("found %s - extracting to %s ...", filename, output)
+                with open(output, "wb") as f:
+                    f.write(file.read())
+                file.close()
+                return
 
     def scan(self):
-        for layer in [l for l in self.image.layers if not l.empty_layer]:
-            logger.info("layer %s: %s", layer.id, layer.created_by)
-            with self.image.image_archive.extractfile(
-                "{}/layer.tar".format(layer.id)
-            ) as layer_archive:
-                with tarfile.open(fileobj=layer_archive, mode="r") as lf:
-                    try:
-                        for member in lf.getmembers():
-                            if os.path.basename(member.name).startswith(".wh."):
-                                self.__whiteout(member.name, layer)
-                            data = self.__extract_file(lf, member)
-                            if not data:
-                                continue
-                            findings = self.scan_file_data(
-                                data, member.name, docker_instruction=layer.created_by
-                            )
-                            data.close()
-                            self.findings.extend(findings)
-                    except:
-                        logger.error("failed to list files for layer %s", layer.id)
+        for (
+            file,
+            file_name,
+            _,
+            layer_created_by,
+        ) in self.file_provider.get_files():
+            if os.path.basename(file_name).startswith(".wh."):
+                self.__whiteout(file_name, layer_created_by)
+            findings = self.scan_file_data(
+                file, file_name, docker_instruction=layer_created_by
+            )
+            file.close()
+            self.findings.extend(findings)
 
-    def __whiteout(self, filename: str, layer: Layer):
+    def __whiteout(self, filename: str, layer_created_by: str):
         finding = [
             finding
             for finding in self.findings
@@ -91,7 +80,7 @@ class ImageScanner(BaseScanner):
         ]
 
         for f in finding:
-            f.properties["removed_by"] = layer.created_by
+            f.properties["removed_by"] = layer_created_by
             f.properties["whiteout"] = True
 
     def __extract_file(
