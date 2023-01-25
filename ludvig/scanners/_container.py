@@ -83,13 +83,6 @@ class ImageScanner(BaseScanner):
             f.properties["removed_by"] = layer_created_by
             f.properties["whiteout"] = True
 
-    def __extract_file(
-        self, image: tarfile.TarFile, file: tarfile.TarInfo
-    ) -> IO[bytes]:
-        if file.isfile():
-            return image.extractfile(file)
-        return None
-
     def __scan_environment(self, variables: List[str]) -> Finding:
         pass
 
