@@ -14,6 +14,8 @@ class LudvigCommandsLoader(CLICommandsLoader):
             self, "image", "ludvig.commands.image#{}", help="Container image operations"
         ) as g:
             g.command("scan", "scan", table_transformer=transform_finding_list)
+            g.command("whiteouts", "list_whiteouts")
+            g.command("extract", "extract_file")
         with CommandGroup(
             self, "fs", "ludvig.commands.filesystem#{}", help="File system operations"
         ) as g:
@@ -31,14 +33,21 @@ class LudvigCommandsLoader(CLICommandsLoader):
             )
         super(LudvigCommandsLoader, self).load_arguments(command)
 
+
 class LudvigCommandInvoker(CommandInvoker):
-    def execute(self, args):        
+    def execute(self, args):
         result = super().execute(args)
-        if args[1] == "scan" and result.result: #dirty hack to provoke exit code if any scan results return
+        if (
+            args[1] == "scan" and result.result
+        ):  # dirty hack to provoke exit code if any scan results return
             result.exit_code = 1
         return result
-        
 
-ludvig_cli = CLI(cli_name="ludvig", commands_loader_cls=LudvigCommandsLoader, invocation_cls=LudvigCommandInvoker)
+
+ludvig_cli = CLI(
+    cli_name="ludvig",
+    commands_loader_cls=LudvigCommandsLoader,
+    invocation_cls=LudvigCommandInvoker,
+)
 exit_code = ludvig_cli.invoke(sys.argv[1:])
 sys.exit(exit_code)
