@@ -3,14 +3,20 @@ import sys
 from ludvig.types import Severity
 from knack import CLI, ArgumentsContext, CLICommandsLoader
 from knack.commands import CommandGroup
+import ludvig._help  # pylint: disable=unused-import
+from ludvig._format import transform_finding_list
 
 
 class LudvigCommandsLoader(CLICommandsLoader):
     def load_command_table(self, args):
-        with CommandGroup(self, "image", "ludvig.commands.image#{}", help="Container image operations") as g:
-            g.command("scan", "scan")
-        with CommandGroup(self, "fs", "ludvig.commands.filesystem#{}", help="File system operations") as g:
-            g.command("scan", "scan")
+        with CommandGroup(
+            self, "image", "ludvig.commands.image#{}", help="Container image operations"
+        ) as g:
+            g.command("scan", "scan", table_transformer=transform_finding_list)
+        with CommandGroup(
+            self, "fs", "ludvig.commands.filesystem#{}", help="File system operations"
+        ) as g:
+            g.command("scan", "scan", table_transformer=transform_finding_list)
         return OrderedDict(self.command_table)
 
     def load_arguments(self, command):

@@ -16,9 +16,12 @@ class BaseScanner:
                 severity = Severity[match.meta["severity"]] if "severity" in match.meta else Severity.UNKNOWN
                 if severity < self.severity_level:
                     continue
-                file_data.seek(0)
-                fd = file_data.read(match.strings[0][0])
-                line = fd.count(b"\n")+1
+                if file_data.tell() < 1048576:
+                    file_data.seek(0)
+                    fd = file_data.read(match.strings[0][0])
+                    line = fd.count(b"\n")+1
+                else:
+                    line = -1
                 samples = FindingSample.from_yara_match(match, self.deobfuscated, line)
                 findings.append(SecretFinding(YaraRuleMatch(match), samples, file_name, **kwargs))
         except Exception as ex:
