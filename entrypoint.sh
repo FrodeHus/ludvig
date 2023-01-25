@@ -24,9 +24,9 @@ if [ $customRules ]; then
 fi
 
 if [ $level ]; then
-    levelArg="--level $level"
+    levelArg="--severity-level $level"
     ARGS="$ARGS $levelArg"
 fi
 
 
-python3 -m ludvig ${ARGS} fs ${path}
+python3 -m ludvig fs scan --path ${path} ${ARGS} -otable

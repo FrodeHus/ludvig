@@ -21,7 +21,7 @@ outputs:
     description: 'Scan results'
 runs:
   using: 'docker'
-  image: 'docker://reothor/ludvig:latest'
+  image: 'docker://reothor/ludvig:0.2'
   args:
     - '-c ${{ inputs.customRulesPath }}'
     - '-p ${{ inputs.path }}'

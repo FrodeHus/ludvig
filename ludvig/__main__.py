@@ -3,6 +3,7 @@ import sys
 from ludvig.types import Severity
 from knack import CLI, ArgumentsContext, CLICommandsLoader
 from knack.commands import CommandGroup
+from knack.invocation import CommandInvoker
 import ludvig._help  # pylint: disable=unused-import
 from ludvig._format import transform_finding_list
 
@@ -30,7 +31,14 @@ class LudvigCommandsLoader(CLICommandsLoader):
             )
         super(LudvigCommandsLoader, self).load_arguments(command)
 
+class LudvigCommandInvoker(CommandInvoker):
+    def execute(self, args):        
+        result = super().execute(args)
+        if args[1] == "scan" and result.result: #dirty hack to provoke exit code if any scan results return
+            result.exit_code = 1
+        return result
+        
 
-ludvig_cli = CLI(cli_name="ludvig", commands_loader_cls=LudvigCommandsLoader)
+ludvig_cli = CLI(cli_name="ludvig", commands_loader_cls=LudvigCommandsLoader, invocation_cls=LudvigCommandInvoker)
 exit_code = ludvig_cli.invoke(sys.argv[1:])
 sys.exit(exit_code)
