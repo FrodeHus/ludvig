@@ -16,7 +16,7 @@ class BaseFileProvider:
             return fnmatch.fnmatch(filename, exclude)
 
     def __read_ignore_file(self):
-        if os.path.exists(".ludvigignore"):
+        if os.path.exists(".ludvignore"):
             with open(".ludvignore", "r") as fp:
                 ignore_data = fp.readlines()
                 self.exclusions.extend(ignore_data)
