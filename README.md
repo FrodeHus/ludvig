@@ -6,7 +6,9 @@ Security scanner
 
 Named after Kjell Aukrust's character Ludvig who thinks everything is dangerous and is scared of the dark during the day.
 
-Very much Work In Progress
+Why yet another scanner?
+
+Mostly because I thought it was a fun way to use YARA rules for something in addition to malware hunting and to learn how these kind of tools are made.
 
 ## GitHub Action usage
 
