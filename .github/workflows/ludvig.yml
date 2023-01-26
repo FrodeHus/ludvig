@@ -1,4 +1,4 @@
-name: "Ludvig test"
+name: "Ludvig scan"
 on:
   workflow_dispatch:
     inputs:
@@ -37,7 +37,7 @@ jobs:
           path: "${{ github.event.inputs.path }}"
           customRulesPath: "${{ github.event.inputs.customRulesPath }}"
           level: "${{ github.event.inputs.level }}"
-          sarif: "${{ github.event.inputs.sarifFile }}"
+          sarifFileName: "${{ github.event.inputs.sarifFile }}"
       - name: Upload Ludvig scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
