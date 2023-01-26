@@ -22,3 +22,8 @@ ludvig = "ludvig.__main__:main"
 [project.urls]
 "Homepage" = "https://github.com/frodehus/ludvig"
 "Bug Tracker" = "https://github.com/frodehus/ludvig/issues"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
