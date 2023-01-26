@@ -1,28 +1,32 @@
-name: 'Ludvig by Reothor'
-description: 'Scan for secrets and vulnerabilities'
+name: "Ludvig by Reothor"
+description: "Scan for secrets and vulnerabilities"
 author: Frode Hus
 branding:
   color: purple
   icon: eye
 inputs:
-  path: 
-    description: 'Path to scan'
+  path:
+    description: "Path to scan"
     required: true
-    default: '.'
+    default: "."
   customRulesPath:
-    description: 'Path to custom YARA rules'
+    description: "Path to custom YARA rules"
     required: false
   level:
-    description: 'Only report findings above the given level [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
+    description: "Only report findings above the given level [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]"
     default: "MEDIUM"
     required: false
+  sarifFileName:
+    description: "SARIF file name (enables SARIF generation)"
+    required: false
 outputs:
-  result: 
-    description: 'Scan results'
+  result:
+    description: "Scan results"
 runs:
-  using: 'docker'
-  image: 'docker://reothor/ludvig:0.2'
+  using: "docker"
+  image: "docker://reothor/ludvig:0.2.5"
   args:
-    - '-c ${{ inputs.customRulesPath }}'
-    - '-p ${{ inputs.path }}'
-    - '-l ${{ inputs.level }}'
+    - "-c ${{ inputs.customRulesPath }}"
+    - "-p ${{ inputs.path }}"
+    - "-l ${{ inputs.level }}"
+    - "-s ${{ inputs.sarifFileName }}"

@@ -3,14 +3,14 @@ on:
   workflow_dispatch:
     inputs:
       path:
-        description: 'Path to scan'
+        description: "Path to scan"
         required: true
-        default: 'samples/dotnet'
+        default: "samples/dotnet"
       customRulesPath:
-        description: 'Path to custom rules'
+        description: "Path to custom rules"
         required: false
       level:
-        description: 'Only report findings above the given level'
+        description: "Only report findings above the given level"
         required: false
         type: choice
         default: "MEDIUM"
@@ -20,21 +20,25 @@ on:
           - "MEDIUM"
           - "HIGH"
           - "CRITICAL"
+      sarifFile:
+        description: "SARIF filename - enables SARIF generation"
+        required: false
 
 jobs:
   ludvig:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3    
-    - name: Run Ludvig from local definition
-      continue-on-error: true
-      uses: ./
-      with:
-        path:
-          '${{ github.event.inputs.path }}'
-        customRulesPath:
-          '${{ github.event.inputs.customRulesPath }}'
-        level:
-          '${{ github.event.inputs.level }}'
-  
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Run Ludvig from local definition
+        continue-on-error: true
+        uses: ./
+        with:
+          path: "${{ github.event.inputs.path }}"
+          customRulesPath: "${{ github.event.inputs.customRulesPath }}"
+          level: "${{ github.event.inputs.level }}"
+          sarif: "${{ github.event.inputs.sarifFile }}"
+      - name: Upload Ludvig scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: "${{ github.event.inputs.sarifFile }}"

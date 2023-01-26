@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+
 def transform_finding_list(result):
     transformed = []
     for r in result:
@@ -9,7 +10,7 @@ def transform_finding_list(result):
                 ("Name", r["match"]["ruleName"]),
                 ("Severity", r["severity"]),
                 ("Filename", r["filename"]),
-                ("LineNumber", r["samples"][0]["lineNumber"])
+                ("LineNumber", r["samples"][0]["lineNumber"]),
             ]
         )
         transformed.append(res)

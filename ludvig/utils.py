@@ -1,7 +1,7 @@
 from typing import Tuple
 
 
-def get_line_number(content : str, position : int) -> Tuple[int, str]:
+def get_line_number(content: str, position: int) -> Tuple[int, str]:
     lines = content.splitlines()
     lower = 0
     upper = len(lines) - 1
@@ -14,5 +14,5 @@ def get_line_number(content : str, position : int) -> Tuple[int, str]:
             upper = index - 1
         else:
             lower = index + 1
-        
+
     return lower - 1, lines[lower - 1]
