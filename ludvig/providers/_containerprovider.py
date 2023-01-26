@@ -23,6 +23,9 @@ class ContainerProvider(BaseFileProvider):
                     with tarfile.open(fileobj=layer_archive, mode="r") as lf:
                         try:
                             for member in lf.getmembers():
+                                if self.is_excluded(member.name):
+                                    continue
+
                                 file_data = self.__extract_file(lf, member)
                                 if not file_data:
                                     continue

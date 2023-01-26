@@ -10,7 +10,7 @@ class FileSystemProvider(BaseFileProvider):
 
     def get_files(self):
         for filename in glob.iglob(os.path.join(self.path, "**/*"), recursive=True):
-            if os.path.isdir(filename):
+            if os.path.isdir(filename) or self.is_excluded(filename):
                 continue
             with open(filename, "rb") as f:
                 yield f, filename
