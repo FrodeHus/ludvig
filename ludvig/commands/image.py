@@ -9,6 +9,7 @@ def scan(
     severity_level: Severity = Severity.MEDIUM,
     deobfuscated=False,
     output_sarif=None,
+    include_first_layer=False,
 ):
     """
     Scans a container image
@@ -17,10 +18,11 @@ def scan(
     :param severity_level: Set severity level for reporting
     :param deobfuscated: Returns any secrets found in plaintext. Defaults to False.
     :param output_sarif: Generates SARIF report if filename is specified.
+    :param include_first_layer: Scan first layer (base image) as well - may affect speed. Defaults to False.
     """
     if isinstance(severity_level, str):
         severity_level = Severity[severity_level]
-    provider = ContainerProvider(repository)
+    provider = ContainerProvider(repository, include_first_layer)
     scanner = ImageScanner(provider, severity_level, deobfuscated, custom_rules)
     scanner.scan()
     if output_sarif:
@@ -32,12 +34,13 @@ def scan(
     return scanner.findings
 
 
-def list_whiteouts(repository: str):
+def list_whiteouts(repository: str, include_first_layer=False):
     """
     Scans a container image for deleted files
     :param repository: Container image to scan
+    :param include_first_layer: Scan first layer (base image) as well - may affect speed. Defaults to False.
     """
-    provider = ContainerProvider(repository)
+    provider = ContainerProvider(repository, include_first_layer)
     scanner = ImageScanner(provider)
     return scanner.list_whiteout()
 
