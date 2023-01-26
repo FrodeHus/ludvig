@@ -1,6 +1,6 @@
 # Ludvig
 
-[![Ludvig scan](https://github.com/FrodeHus/ludvig/actions/workflows/ludvig.yml/badge.svg)](https://github.com/FrodeHus/ludvig/actions/workflows/ludvig.yml)
+[![Ludvig scan](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml/badge.svg)](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml)
 
 Secret scanner
 
