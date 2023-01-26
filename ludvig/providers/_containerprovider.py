@@ -9,13 +9,15 @@ logger = get_logger(__name__)
 
 
 class ContainerProvider(BaseFileProvider):
-    def __init__(self, repository: str) -> None:
+    def __init__(self, repository: str, include_first_layer=False) -> None:
         super().__init__()
         self.repository = repository
+        self.include_first_layer = include_first_layer
 
     def get_files(self):
         with self.__get_image() as image:
-            for layer in [l for l in image.layers if not l.empty_layer]:
+            layers = image.layers[1:] if not self.include_first_layer else image.layers
+            for layer in [l for l in layers if not l.empty_layer]:
                 logger.info("layer %s: %s", layer.id, layer.created_by)
                 with image.image_archive.extractfile(
                     "{}/layer.tar".format(layer.id)
