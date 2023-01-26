@@ -1,0 +1,22 @@
+name: "Ludvig scan"
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+    
+jobs:
+  ludvig:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Ludvig by Reothor
+        uses: FrodeHus/ludvig@v0.2.5
+        with:
+          path: ludvig
+          sarifFileName: ludvig.sarif
+      - name: Upload Ludvig scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: ludvig.sarif

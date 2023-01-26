@@ -1,4 +1,4 @@
-name: "Ludvig scan"
+name: "Ludvig dev scan"
 on:
   workflow_dispatch:
     inputs:
