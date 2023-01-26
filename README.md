@@ -2,7 +2,7 @@
 
 [![Ludvig scan](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml/badge.svg)](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml)
 
-Secret scanner
+Security scanner
 
 Named after Kjell Aukrust's character Ludvig who thinks everything is dangerous and is scared of the dark during the day.
 
