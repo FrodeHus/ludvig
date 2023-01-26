@@ -22,7 +22,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3    
     - name: Run Ludvig 
-      uses: FrodeHus/ludvig@v0.1.3
+      uses: FrodeHus/ludvig@v0.2.5
       with:
         path: 
           '<path to scan>'
@@ -30,26 +30,52 @@ jobs:
           '<path to custom YARA rules - optional>'
         level:
           '<UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL - optional (default: MEDIUM)>'
+        sarifFileName:
+          'SARIF file name (enables SARIF generation)'
 ```
 
 
 
 ## CLI Usage
 
-The general usage of the tool is: `python -m ludvig [--deobfuscated] [--custom-rules <PATH>] <scan type> <args>`
-
-`--deobfuscated` will reveal any secrets found, default is to obfuscate the secret
-
-`--custom-rules <PATH>` lets you specify your own YARA rules (loads all `.yar` files under the specified `<PATH>`)
-
-`--level <LEVEL>` Only report findings above the given level (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL - default: MEDIUM)
+The general usage of the tool can be found by running `python -m ludvig --help`
 
 ### Container scan
 
-Scan a container: `python -m ludvig image scan --repository <image>`
+Scan container: `python -m ludvig image scan --repository <repository>`
+
+```
+ludvig image scan --help
+
+Command
+    ludvig image scan : Scans a container image.
+
+Arguments
+    --repository [Required] : Container image to scan (ex: myimage:1.1).
+    --custom-rules          : Path to any custom YARA rules (need to have .yar extension).
+    --deobfuscated          : Returns any secrets found in plaintext. Defaults to False.
+    --output-sarif          : Generates SARIF report if filename is specified.
+    --severity-level        : Set severity level for reporting.  Allowed values: CRITICAL, HIGH,
+                              LOW, MEDIUM, UNKNOWN.  Default: MEDIUM.
+```
 
 ### Filesystem scan
 
 Scan the filesystem: `python -m ludvig fs scan --path <path>`
+
+```
+ludvig fs scan --help
+
+Command
+    ludvig fs scan : Scans a filesystem path.
+
+Arguments
+    --path  [Required] : Path to scan.
+    --custom-rules     : Path to any custom YARA rules (need to have .yar extension).
+    --deobfuscated     : Returns any secrets found in plaintext. Defaults to False.
+    --output-sarif     : Generates SARIF report if filename is specified.
+    --severity-level   : Set severity level for reporting.  Allowed values: CRITICAL, HIGH, LOW,
+                         MEDIUM, UNKNOWN.  Default: MEDIUM.
+```
 
 
