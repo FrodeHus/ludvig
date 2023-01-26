@@ -6,7 +6,7 @@ Secret scanner
 
 Named after Kjell Aukrust's character Ludvig who thinks everything is dangerous and is scared of the dark during the day.
 
-Very much Work In Progress 
+Very much Work In Progress
 
 ## GitHub Action usage
 
@@ -14,27 +14,30 @@ Very much Work In Progress
 name: "Ludvig test"
 on:
   workflow_dispatch:
-    
+
 jobs:
   ludvig:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3    
-    - name: Run Ludvig 
-      uses: FrodeHus/ludvig@v0.2.5
-      with:
-        path: 
-          '<path to scan>'
-        customRulesPath:
-          '<path to custom YARA rules - optional>'
-        level:
-          '<UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL - optional (default: MEDIUM)>'
-        sarifFileName:
-          'SARIF file name (enables SARIF generation)'
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Run Ludvig
+        uses: FrodeHus/ludvig@v0.2.5
+        with:
+          path: "<path to scan>"
+          customRulesPath: "<path to custom YARA rules - optional>"
+          level: "<UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL - optional (default: MEDIUM)>"
+          sarifFileName: "SARIF file name (enables SARIF generation)"
 ```
 
+## Adding files/directories to ignore list
 
+Create a `.ludvignore` file such as:
+
+```
+*.yar
+debug/
+```
 
 ## CLI Usage
 
@@ -77,5 +80,3 @@ Arguments
     --severity-level   : Set severity level for reporting.  Allowed values: CRITICAL, HIGH, LOW,
                          MEDIUM, UNKNOWN.  Default: MEDIUM.
 ```
-
-
