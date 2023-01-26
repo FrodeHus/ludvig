@@ -1,11 +1,15 @@
 from knack.help_files import helps
 
-helps['image'] = """
+helps[
+    "image"
+] = """
 type: group
 short-summary: Operations related to container images
 """
 
-helps['fs'] = """
+helps[
+    "fs"
+] = """
 type: group
 short-summary: Operations related to file system
 """
