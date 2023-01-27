@@ -13,3 +13,10 @@ helps[
 type: group
 short-summary: Operations related to file system
 """
+
+helps[
+    "rules"
+] = """
+type: group
+short-summary: Maintain rule sets
+"""

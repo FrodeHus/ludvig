@@ -20,6 +20,8 @@ class LudvigCommandsLoader(CLICommandsLoader):
             self, "fs", "ludvig.commands.filesystem#{}", help="File system operations"
         ) as g:
             g.command("scan", "scan", table_transformer=transform_finding_list)
+        with CommandGroup(self, "rules", "ludvig.commands.rules#{}") as g:
+            g.command("download", "download")
         return OrderedDict(self.command_table)
 
     def load_arguments(self, command):

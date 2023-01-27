@@ -1,8 +1,38 @@
 from enum import IntEnum
 import json
-from tarfile import TarFile
+import os
 from typing import List
 import yara
+from ludvig.rules import RuleSetSource
+
+
+class Config:
+    def __init__(
+        self, config_path: str, rule_sources: List[RuleSetSource] = None
+    ) -> None:
+        self.config_path = config_path
+        self.compiled_rules = os.path.join(config_path, "ludvig.rules")
+        if rule_sources:
+            rule_sources.append(
+                RuleSetSource(
+                    "Built-In", "secrets", "http://localhost:8000/secret_rules.tar.gz"
+                )
+            )
+        else:
+            rule_sources = [
+                RuleSetSource(
+                    "Built-In", "secrets", "http://localhost:8000/secret_rules.tar.gz"
+                )
+            ]
+        self.rule_sources = rule_sources
+
+    @staticmethod
+    def load():
+        config_path = os.path.join(os.path.expanduser("~"), ".ludvig")
+        if not os.path.exists(config_path):
+            os.makedirs(config_path)
+
+        return Config(config_path)
 
 
 class Severity(IntEnum):

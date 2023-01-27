@@ -11,9 +11,8 @@ class FilesystemScanner(BaseScanner):
         provider: FileSystemProvider,
         severity_level: Severity = Severity.MEDIUM,
         deobfuscated=False,
-        custom_rules: str = None,
     ) -> None:
-        super().__init__(deobfuscated, custom_rules)
+        super().__init__(deobfuscated)
         self.provider = provider
         self.severity_level = severity_level
         self.findings: List[Finding] = []
