@@ -1,5 +1,5 @@
 global rule SizeLimit
 {
     condition:
-        filesize < 2MB
+        filesize < 512KB
 }

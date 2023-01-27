@@ -27,10 +27,12 @@ class LudvigCommandsLoader(CLICommandsLoader):
             ac.argument(
                 "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
             )
+            ac.argument("max_file_size", type=int)
         with ArgumentsContext(self, "fs") as ac:
             ac.argument(
                 "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
             )
+            ac.argument("max_file_size", type=int)
         super(LudvigCommandsLoader, self).load_arguments(command)
 
 
