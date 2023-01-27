@@ -2,6 +2,8 @@
 
 [![Ludvig scan](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml/badge.svg)](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml)
 
+> Want to use Ludvig with your CI pipeline? Mosey on over to the [Ludvig Action](https://github.com/marketplace/actions/ludvig-security-scanner) :) 
+
 Security scanner
 
 Named after Kjell Aukrust's character Ludvig who thinks everything is dangerous and is scared of the dark during the day.
@@ -10,40 +12,10 @@ Why yet another scanner?
 
 Mostly because I thought it was a fun way to use YARA rules for something in addition to malware hunting and to learn how these kind of tools are made.
 
-## GitHub Action usage
-
-```yaml
-name: "Ludvig test"
-on:
-  workflow_dispatch:
-
-jobs:
-  ludvig:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Run Ludvig
-        uses: FrodeHus/ludvig@v0.2.5
-        with:
-          path: "<path to scan>"
-          customRulesPath: "<path to custom YARA rules - optional>"
-          level: "<UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL - optional (default: MEDIUM)>"
-          sarifFileName: "SARIF file name (enables SARIF generation)"
-```
-
-## Adding files/directories to ignore list
-
-Create a `.ludvignore` file such as:
-
-```
-*.yar
-debug/
-```
-
-## CLI Usage
+## Usage
 
 The general usage of the tool can be found by running `python -m ludvig --help`
+
 
 ### Container scan
 
@@ -81,4 +53,13 @@ Arguments
     --output-sarif     : Generates SARIF report if filename is specified.
     --severity-level   : Set severity level for reporting.  Allowed values: CRITICAL, HIGH, LOW,
                          MEDIUM, UNKNOWN.  Default: MEDIUM.
+```
+
+### Adding files/directories to ignore list
+
+Create a `.ludvignore` file such as:
+
+```
+*.yar
+debug/
 ```
