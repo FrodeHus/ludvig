@@ -1,5 +1,5 @@
 import tarfile
-from typing import IO
+from typing import IO, List
 from ._docker._definitions import Image, LayerFile
 from ._providers import BaseFileProvider
 from ._docker._main import read_local_docker_image
@@ -9,8 +9,14 @@ logger = get_logger(__name__)
 
 
 class ContainerProvider(BaseFileProvider):
-    def __init__(self, repository: str, include_first_layer=False) -> None:
-        super().__init__()
+    def __init__(
+        self,
+        repository: str,
+        include_first_layer=False,
+        exclusions: List[str] = None,
+        max_file_size=10000,
+    ) -> None:
+        super().__init__(exclusions=exclusions, max_file_size=max_file_size)
         self.repository = repository
         self.include_first_layer = include_first_layer
 
@@ -25,7 +31,11 @@ class ContainerProvider(BaseFileProvider):
                     with tarfile.open(fileobj=layer_archive, mode="r") as lf:
                         try:
                             for member in lf.getmembers():
-                                if self.is_excluded(member.name):
+                                if (
+                                    self.is_excluded(member.name)
+                                    or not member.isfile
+                                    or member.size > self.max_file_size
+                                ):
                                     continue
 
                                 file_data = self.__extract_file(lf, member)

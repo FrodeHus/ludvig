@@ -10,19 +10,23 @@ def scan(
     deobfuscated=False,
     output_sarif=None,
     include_first_layer=False,
+    max_file_size=10000,
 ):
     """
     Scans a container image
     :param repository: Container image to scan (ex: myimage:1.1)
     :param custom_rules: Path to any custom YARA rules (need to have .yar extension)
     :param severity_level: Set severity level for reporting
-    :param deobfuscated: Returns any secrets found in plaintext. Defaults to False.
+    :param deobfuscated: Returns any secrets found in plaintext. Default: False.
     :param output_sarif: Generates SARIF report if filename is specified.
-    :param include_first_layer: Scan first layer (base image) as well - may affect speed. Defaults to False.
+    :param include_first_layer: Scan first layer (base image) as well - may affect speed. Default: False.
+    :param max_file_size: Max file size for scanning (in bytes).
     """
     if isinstance(severity_level, str):
         severity_level = Severity[severity_level]
-    provider = ContainerProvider(repository, include_first_layer)
+    provider = ContainerProvider(
+        repository, include_first_layer, max_file_size=max_file_size
+    )
     scanner = ImageScanner(provider, severity_level, deobfuscated, custom_rules)
     scanner.scan()
     if output_sarif:
