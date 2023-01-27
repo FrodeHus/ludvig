@@ -41,5 +41,7 @@ RUN apk add --no-cache -t .build-deps py3-setuptools \
   && apk del --purge .build-deps
 COPY ludvig ludvig
 COPY requirements.txt .
+#no need to install yara-python as its already been compiled and installed
+RUN sed -i 's/yara-python==[0-9\.]\{5\}//g' requirements.txt 
 RUN pip install -r requirements.txt
 ENTRYPOINT [ "python", "-m", "ludvig" ]
