@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ludvig"
-version = "0.2.9"
+version = "0.2.6"
 authors = [{ name = "Frode Hus", email = "frode@frodehus.dev" }]
 description = "A simple vulnerability scanner"
 readme = "README.md"
