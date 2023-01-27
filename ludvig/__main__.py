@@ -38,7 +38,7 @@ class LudvigCommandInvoker(CommandInvoker):
     def execute(self, args):
         result = super().execute(args)
         if (
-            args[1] == "scan" and result.result
+            len(args) > 1 and args[1] == "scan" and result.result
         ):  # dirty hack to provoke exit code if any scan results return
             result.exit_code = 1
         return result
