@@ -18,6 +18,8 @@ def download_rules(sources: List[RuleSetSource], config_path: str) -> yara.Rules
     namespaces = {}
     for src in sources:
         set = __download_rule_set(src)
+        if not set:
+            continue
         ns = src.category.lower()
         if ns in namespaces:
             namespaces[ns] = namespaces[ns] + "\r\n" + set
@@ -30,13 +32,18 @@ def download_rules(sources: List[RuleSetSource], config_path: str) -> yara.Rules
 
 
 def __download_rule_set(source: RuleSetSource):
-    logger.debug("downloading %s from %s", source.name, source.url)
-    res = requests.get(source.url)
+    name = source.name
+    url = source.url
+    logger.debug("downloading %s from %s", name, url)
+    try:
+        res = requests.get(url)
 
-    with TemporaryFile(suffix=".tar.gz") as f:
-        f.write(res.content)
-        f.seek(0)
-        return __extract_rules(f)
+        with TemporaryFile(suffix=".tar.gz") as f:
+            f.write(res.content)
+            f.seek(0)
+            return __extract_rules(f)
+    except:
+        logger.error("failed to retrieve rule package %s from %s", name, url)
 
 
 def __extract_rules(rule_package: IO[bytes]):
