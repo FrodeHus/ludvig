@@ -2,7 +2,7 @@ from typing import IO, List
 import os
 from ludvig.rules import load_yara_rules
 from ludvig.types import Finding, FindingSample, SecretFinding, Severity, YaraRuleMatch
-from ludvig.commands.rules import download_rules
+from ludvig.rules import download_rules
 from ludvig import current_config
 from knack.log import get_logger
 
