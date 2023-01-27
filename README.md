@@ -1,16 +1,18 @@
-# Ludvig
+# Ludvig security scanner
 
 [![Ludvig scan](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml/badge.svg)](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml)
 
 > Want to use Ludvig with your CI pipeline? Mosey on over to the [Ludvig Action](https://github.com/marketplace/actions/ludvig-security-scanner) :)
 
-Security scanner
-
 Named after Kjell Aukrust's character Ludvig who thinks everything is dangerous and is scared of the dark during the day.
 
-Why yet another scanner?
+_Why yet another scanner?_
 
 Mostly because I thought it was a fun way to use YARA rules for something in addition to malware hunting and to learn how these kind of tools are made.
+
+## Installation
+
+Either clone this repository or install using `python -m pip install ludvig`
 
 ## Usage
 
