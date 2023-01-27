@@ -4,8 +4,8 @@ import yara
 import os
 from ._definitions import RuleSetSource
 import tarfile
-from knack.log import get_logger
 import requests
+from knack.log import get_logger
 
 logger = get_logger(__name__)
 

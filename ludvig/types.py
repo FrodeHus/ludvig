@@ -23,13 +23,17 @@ class Config:
         if rule_sources and "Built-in" not in rule_sources:
             rule_sources.append(
                 RuleSetSource(
-                    "Built-In", "secrets", "http://localhost:8000/secret_rules.tar.gz"
+                    "Built-In",
+                    "secrets",
+                    "https://github.com/FrodeHus/ludvig-rules/archive/refs/tags/v0.0.1.tar.gz",
                 )
             )
         else:
             rule_sources = [
                 RuleSetSource(
-                    "Built-In", "secrets", "http://localhost:8000/secret_rules.tar.gz"
+                    "Built-In",
+                    "secrets",
+                    "https://github.com/FrodeHus/ludvig-rules/archive/refs/tags/v0.0.1.tar.gz",
                 )
             ]
         self.rule_sources = rule_sources
