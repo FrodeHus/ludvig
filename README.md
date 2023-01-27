@@ -2,7 +2,7 @@
 
 [![Ludvig scan](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml/badge.svg)](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml)
 
-> Want to use Ludvig with your CI pipeline? Mosey on over to the [Ludvig Action](https://github.com/marketplace/actions/ludvig-security-scanner) :) 
+> Want to use Ludvig with your CI pipeline? Mosey on over to the [Ludvig Action](https://github.com/marketplace/actions/ludvig-security-scanner) :)
 
 Security scanner
 
@@ -15,7 +15,6 @@ Mostly because I thought it was a fun way to use YARA rules for something in add
 ## Usage
 
 The general usage of the tool can be found by running `python -m ludvig --help`
-
 
 ### Container scan
 

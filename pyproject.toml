@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ludvig"
-version = "0.0.1"
+version = "0.2.9"
 authors = [{ name = "Frode Hus", email = "frode@frodehus.dev" }]
 description = "A simple vulnerability scanner"
 readme = "README.md"
@@ -22,7 +22,7 @@ dependencies = [
     'knack==0.10.1',
     'jschema_to_python==1.2.3',
     'sarif_om==1.0.4',
-    'urllib3==1.26.14'
+    'urllib3==1.26.14',
 ]
 
 
@@ -38,3 +38,14 @@ ludvig = "ludvig.__main__:main"
 line-length = 88
 target-version = ['py39']
 include = '\.pyi?$'
+[tool.bumpver]
+current_version = "0.2.7"
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"ludvig/__init__.py" = ["{version}"]
