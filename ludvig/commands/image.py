@@ -5,7 +5,6 @@ from ludvig.providers import ContainerProvider
 
 def scan(
     repository: str,
-    custom_rules: str = None,
     severity_level: Severity = Severity.MEDIUM,
     deobfuscated=False,
     output_sarif=None,
@@ -15,7 +14,6 @@ def scan(
     """
     Scans a container image
     :param repository: Container image to scan (ex: myimage:1.1)
-    :param custom_rules: Path to any custom YARA rules (need to have .yar extension)
     :param severity_level: Set severity level for reporting
     :param deobfuscated: Returns any secrets found in plaintext. Default: False.
     :param output_sarif: Generates SARIF report if filename is specified.
@@ -27,7 +25,7 @@ def scan(
     provider = ContainerProvider(
         repository, include_first_layer, max_file_size=max_file_size
     )
-    scanner = ImageScanner(provider, severity_level, deobfuscated, custom_rules)
+    scanner = ImageScanner(provider, severity_level, deobfuscated)
     scanner.scan()
     if output_sarif:
         from ludvig.outputs import SarifConverter

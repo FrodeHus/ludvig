@@ -22,7 +22,7 @@ The general usage of the tool can be found by running `python -m ludvig --help`
 
 Scan container: `python -m ludvig image scan --repository <repository>`
 
-```
+```text
 ludvig image scan --help
 
 Command
@@ -41,7 +41,7 @@ Arguments
 
 Scan the filesystem: `python -m ludvig fs scan --path <path>`
 
-```
+```text
 ludvig fs scan --help
 
 Command
@@ -60,7 +60,7 @@ Arguments
 
 Create a `.ludvignore` file such as:
 
-```
+```text
 *.yar
 debug/
 ```
