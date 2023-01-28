@@ -18,7 +18,7 @@
       "request": "launch",
       "module": "ludvig",
       "justMyCode": true,
-      "args": ["fs", "scan", "--path", "samples/container", "-otable"]
+      "args": ["fs", "scan", "--path", ".", "-otable"]
     },
     {
       "name": "Python: Download rules",
