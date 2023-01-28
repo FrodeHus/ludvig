@@ -19,6 +19,11 @@ Either clone this repository or install using `python -m pip install ludvig`
 
 The general usage of the tool can be found by running `python -m ludvig --help`
 
+### Adding your own rules
+
+Ludvig happily accepts YARA rules from anywhere you choose - the only requirement is that they are packaged up neatly in a `.tar.gz` format.
+You can add your custom rule package using `ludivg rules add repo --name my_rules --category my_worries --url http://localhost/my_rules.tar.gz
+
 ### Container scan
 
 Scan container: `python -m ludvig image scan --repository <repository>`
