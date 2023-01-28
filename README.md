@@ -18,9 +18,16 @@ Is it not that we are most worried about? Our secrets leaking into our artifacts
 
 Either clone this repository or install using `python -m pip install ludvig`
 
+## Quick start
+
+```bash
+ludvig fs scan --path /my_awesome_app -otable
+```
+
 ## Usage
 
 The general usage of the tool can be found by running `python -m ludvig --help`
+
 
 ### Adding your own rules
 
