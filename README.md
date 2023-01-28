@@ -36,8 +36,10 @@ Command
 
 Arguments
     --repository [Required] : Container image to scan (ex: myimage:1.1).
-    --custom-rules          : Path to any custom YARA rules (need to have .yar extension).
-    --deobfuscated          : Returns any secrets found in plaintext. Defaults to False.
+    --deobfuscated          : Returns any secrets found in plaintext. Default: False.
+    --include-first-layer   : Scan first layer (base image) as well - may affect speed. Default:
+                              False.
+    --max-file-size         : Max file size for scanning (in bytes).  Default: 10000.
     --output-sarif          : Generates SARIF report if filename is specified.
     --severity-level        : Set severity level for reporting.  Allowed values: CRITICAL, HIGH,
                               LOW, MEDIUM, UNKNOWN.  Default: MEDIUM.
@@ -55,8 +57,8 @@ Command
 
 Arguments
     --path  [Required] : Path to scan.
-    --custom-rules     : Path to any custom YARA rules (need to have .yar extension).
-    --deobfuscated     : Returns any secrets found in plaintext. Defaults to False.
+    --deobfuscated     : Returns any secrets found in plaintext. Default: False.
+    --max-file-size    : Max file size for scanning (in bytes).  Default: 10000.
     --output-sarif     : Generates SARIF report if filename is specified.
     --severity-level   : Set severity level for reporting.  Allowed values: CRITICAL, HIGH, LOW,
                          MEDIUM, UNKNOWN.  Default: MEDIUM.
