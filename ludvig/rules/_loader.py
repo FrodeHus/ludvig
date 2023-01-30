@@ -1,3 +1,4 @@
+import glob
 from tempfile import TemporaryDirectory, TemporaryFile
 from typing import IO, List
 import yara
@@ -42,8 +43,8 @@ def __download_rule_set(source: RuleSetSource):
             f.write(res.content)
             f.seek(0)
             return __extract_rules(f)
-    except:
-        logger.error("failed to retrieve rule package %s from %s", name, url)
+    except Exception as ex:
+        logger.error("failed to retrieve rule package %s from %s: %s", name, url, ex)
 
 
 def __extract_rules(rule_package: IO[bytes]):
@@ -52,8 +53,9 @@ def __extract_rules(rule_package: IO[bytes]):
         archive.extractall(tmp_dir)
         rule_codes = []
 
-        for file in os.listdir(tmp_dir):
-            with open(os.path.join(tmp_dir, file), "r") as f:
+        for file in glob.iglob(os.path.join(tmp_dir, "**/*.yar"), recursive=True):
+            full_path = os.path.join(tmp_dir, file)
+            with open(full_path, "r") as f:
                 rule_code = f.read()
                 rule_codes.append(rule_code)
 

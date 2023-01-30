@@ -15,6 +15,13 @@ short-summary: Operations related to file system
 """
 
 helps[
+    "git"
+] = """
+type: group
+short-summary: Operations related to Git repository
+"""
+
+helps[
     "rules"
 ] = """
 type: group
