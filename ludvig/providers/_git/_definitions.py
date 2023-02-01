@@ -101,7 +101,7 @@ class GitPack:
         hash: str = None,
         offset: int = None,
         meta_data_only=False,
-        delta: GitDelta = None,
+        delta_list: List[GitDelta] = [],
     ):
         if hash:
             offset = self.get_offset_by_hash(hash)
@@ -116,13 +116,14 @@ class GitPack:
             return
         if obj_type == GitObjectType.OBJ_COMMIT:
             content = self.__read_compressed_object(self.__fp, size)
+            # content = self.__apply_delta_list(content, delta_list)
             content = self.__parse_commit_message(content, hash)
         elif obj_type == GitObjectType.OBJ_BLOB:
             content = self.__read_compressed_object(self.__fp, size)
-            # if delta:
-            #     content = self.__apply_delta(content, delta)
+            content = self.__apply_delta_list(content, delta_list)
         elif obj_type == GitObjectType.OBJ_TREE:
             content = self.__read_compressed_object(self.__fp, size)
+            # content = self.__apply_delta_list(content, delta_list)
             return self.__parse_tree(content)
         elif obj_type == GitObjectType.OBJ_REF_DELTA:
             object_name = binascii.hexlify(self.__fp.read(20)).decode("ascii")
@@ -130,8 +131,8 @@ class GitPack:
         elif obj_type == GitObjectType.OBJ_OFS_DELTA:
             delta_offset = self.__read_delta_offset(self.__fp)
             content = self.__read_compressed_object(self.__fp, size)
-            delta = self.__parse_delta_instructions(content)
-            content = self.__get_ofs_delta(self.__fp, offset, delta_offset, delta)
+            delta_list = self.__parse_delta_instructions(content)
+            content = self.__get_ofs_delta(self.__fp, offset, delta_offset, delta_list)
 
         return content
 
@@ -175,12 +176,21 @@ class GitPack:
                 return self.__search_tree(tree, match_hash)
         return None
 
-    def __apply_delta(self, data: bytes, delta: GitDelta):
+    def __apply_delta_list(self, source, delta_list: List[GitDelta] = []):
+        deltas_applied = b""
+        for delta in delta_list:
+            deltas_applied = self.__apply_delta(source, deltas_applied, delta)
+        return deltas_applied
+
+    def __apply_delta(self, source, data: bytes, delta: GitDelta):
         if delta.has_data():
             lb = data[0 : delta.target_offset]
-            rb = data[delta.target_offset + delta.target_size :]
-            return lb + delta.data + rb
-        return data
+            return lb + delta.data
+        else:
+            return (
+                data
+                + source[delta.source_offset : delta.source_offset + delta.target_size]
+            )
 
     def __parse_tree(self, content) -> "GitTree":
         tree = []
@@ -218,7 +228,7 @@ class GitPack:
         f: BufferedReader,
         initial_offset: int,
         offset: int,
-        delta: GitDelta = None,
+        delta_list: List[GitDelta] = [],
     ):
         """
         Reads negative offset and finds the referred deltified object
@@ -231,13 +241,18 @@ class GitPack:
             )
             return None
         if obj_type != GitObjectType.OBJ_OFS_DELTA:
-            return self.get_pack_object(offset=initial_offset - offset, delta=delta)
+            return self.get_pack_object(
+                offset=initial_offset - offset, delta_list=delta_list
+            )
         delta_offset = self.__read_delta_offset(f)
-        return self.__get_ofs_delta(f, initial_offset - offset, delta_offset, delta)
+        return self.__get_ofs_delta(
+            f, initial_offset - offset, delta_offset, delta_list
+        )
 
     def __parse_delta_instructions(self, data):
         i, source_length = self.__msb_size(data)
         i, target_length = self.__msb_size(data, i)
+        delta_list = []
         target_bytes = 0
         while i < len(data):
             c = data[i]
@@ -274,12 +289,14 @@ class GitPack:
                     break
 
                 delta = GitDelta(target_bytes, cp_size, cp_off, None)
+                delta_list.append(delta)
                 target_bytes += cp_size
             elif c:  # insert instruction
                 delta = GitDelta(target_bytes, c, 0, data[i : i + c])
+                delta_list.append(delta)
                 i += c
                 target_bytes += c
-        return delta
+        return delta_list
 
     def __msb_size(self, data, offset=0):
         """

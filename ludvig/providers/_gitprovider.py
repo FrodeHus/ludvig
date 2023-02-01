@@ -27,17 +27,15 @@ class GitRepositoryProvider(BaseFileProvider):
                 pack_name = file[:-5]
                 pack_files.append(pack_name)
             with GitRepository(pack_files) as repo:
-                file_cache = []
                 for commit in repo.commits:
                     try:
                         tree = repo.get_pack_object(hash=commit.tree_hash)
                         for leaf in repo.walk_tree(tree):
-                            if leaf.path in file_cache:
+                            if self.is_excluded(leaf.path):
                                 continue
                             content = repo.get_pack_object(hash=leaf.hash)
                             if not content:
                                 continue
-                            file_cache.append(leaf.path)
                             with BytesIO(content) as c:
                                 yield c, leaf.path, commit.hash
                     except Exception as ex:
