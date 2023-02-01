@@ -48,6 +48,37 @@ class GitRepositoryProvider(BaseFileProvider):
                         pack_idx = GitPackIndex(f)
                         pack_index = pack_idx.read()
                         pack = GitPack(f.replace(".idx", ".pack"), pack_index)
+                        for commit_sha in pack.commits:
+                            try:
+                                commit = pack.commits[commit_sha]
+                                tree_object_name = commit["info"]["tree"]
+                                tree_offset = [
+                                    o["offset"]
+                                    for o in pack_index["objects"]
+                                    if o["name"] == tree_object_name
+                                ][0]
+                                content = pack.get_pack_object(tree_offset)
+
+                                i = 0
+                                tree = []
+                                while i < len(content):
+                                    x = content.find(b" ", i)
+                                    if x == -1:
+                                        i += 1
+                                        continue
+                                    mode = content[i:x]
+                                    i = x + 1
+                                    x = content.find(b"\x00", x)
+                                    path = content[i:x]
+                                    i += (x - i) + 1
+                                    x = i + 20
+                                    sha = binascii.hexlify(content[i:x]).decode("ascii")
+                                    i = x
+                                    tree_item = GitTreeItem(path, mode, sha)
+                                    tree.append(tree_item)
+                                commit["tree"] = tree
+                            except:
+                                continue
                         for obj in pack.blobs:
                             try:
                                 content = pack.get_pack_object(
@@ -160,6 +191,7 @@ class GitPack:
         (commits, blobs) = self.__filter_objects_by_type()
         self.commits = commits
         self.blobs = blobs
+        self.entries = self.__read_git_pack()
 
     def get_pack_object(self, offset: int):
         with open(self.filename, "rb") as f:
@@ -292,6 +324,7 @@ class GitPack:
                 raise Exception("Not a Git pack file: %s", self.filename)
             pack["version"] = read(f, "I")
             num_entries = read(f, "I")
+            pack["total_objects"] = num_entries
             for n in range(num_entries):
                 pass
         return pack
@@ -313,3 +346,10 @@ class GitPack:
         elif type_id == 7:
             return GitObjectType.OBJ_REF_DELTA
         return GitObjectType.NOT_SUPPORTED
+
+
+class GitTreeItem:
+    def __init__(self, path: str, mode: int, hash: str) -> None:
+        self.path = path
+        self.mode = mode
+        self.hash = hash
