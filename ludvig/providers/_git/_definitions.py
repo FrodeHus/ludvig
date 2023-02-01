@@ -1,6 +1,7 @@
 import binascii
 import enum
 from io import BufferedReader
+import os
 import struct
 from typing import List
 import zlib
@@ -37,6 +38,7 @@ class GitPackIndex(dict):
         object = [o for o in self["objects"] if o["name"] == object_hash]
         if len(object) > 0:
             return object[0]["offset"]
+        return None
 
     def __read(self, filename: str):
         # docs : https://git-scm.com/docs/pack-format, https://codewords.recurse.com/issues/three/unpacking-git-packfiles
@@ -64,19 +66,27 @@ class GitPackIndex(dict):
 
 class GitPack:
     def __init__(self, filename: str, idx: dict) -> None:
+        pack_file_size = os.stat(filename).st_size / (1024 * 1024)
+        if pack_file_size >= 100:
+            logger.warn(
+                "Git history is over 100MB (%dMB) - scanning will be slow",
+                pack_file_size,
+            )
         self.filename = filename
         self.idx = idx
         self.commits = self.__get_all_commits()
         self.entries = self.__read_git_pack()
 
-    def get_pack_object(self, offset: int):
+    def get_offset_by_hash(self, hash: str):
+        return self.idx.get_offset(hash)
+
+    def get_pack_object(self, offset: int, meta_data_only=False):
         with open(self.filename, "rb") as f:
             f.seek(offset)
             (obj_type, size) = self.__read_pack_object_header(f)
+            if meta_data_only:
+                return (offset, obj_type, size)
             content = None
-            object_name = [
-                o["name"] for o in self.idx["objects"] if o["offset"] == offset
-            ][0]
             if obj_type == GitObjectType.NOT_SUPPORTED:
                 return
             if obj_type == GitObjectType.OBJ_COMMIT:
@@ -94,13 +104,6 @@ class GitPack:
             elif obj_type == GitObjectType.OBJ_OFS_DELTA:
                 delta_offset = self.__read_delta_offset(f)
                 content = self.__read_compressed_object(f, size)
-                # delta_offset = read_len(f, byte0)
-                obj_name = [
-                    o
-                    for o in self.idx["objects"]
-                    if o["offset"] == (offset - delta_offset)
-                ]
-                parent_object_name = obj_name["name"] if "name" in obj_name else None
                 content = self.__get_ofs_delta(f, offset, delta_offset)
             return content
 
@@ -108,19 +111,37 @@ class GitPack:
         for commit in self.commits:
             offset = self.idx.get_offset(commit.tree_hash)
             tree = self.get_pack_object(offset)
-            leaf = self.__walk_tree(tree, object_hash)
+            leaf = self.__search_tree(tree, object_hash)
             if leaf:
                 return leaf.path
-            return None
+        return None
 
-    def __walk_tree(self, tree: "GitTree", match_hash: str):
+    def walk_tree(self, tree: "GitTree", path_prefix=""):
+        files = []
+        for leaf in tree.leafs:
+            if leaf.mode != 40000 and leaf.mode != 160000:
+                leaf.path = os.path.join(path_prefix, leaf.path)
+                files.append(leaf)
+            else:
+                tree_offset = self.idx.get_offset(leaf.hash)
+                tree = self.get_pack_object(tree_offset)
+                files.extend(self.walk_tree(tree, os.path.join(path_prefix, leaf.path)))
+        return files
+
+    def get_all_blob_offsets(self):
+        for obj in self.idx["objects"]:
+            (offset, obj_type, _) = self.get_pack_object(obj["offset"], True)
+            if obj_type == GitObjectType.OBJ_BLOB:
+                yield obj["name"], offset
+
+    def __search_tree(self, tree: "GitTree", match_hash: str):
         for leaf in tree.leafs:
             if leaf.hash == match_hash:
                 return leaf
-            if leaf.mode == 40000:
+            if leaf.mode == 40000 or leaf.mode == 160000:
                 tree_offset = self.idx.get_offset(leaf.hash)
                 tree = self.get_pack_object(tree_offset)
-                return self.__walk_tree(tree, match_hash)
+                return self.__search_tree(tree, match_hash)
         return None
 
     def __parse_tree(self, content) -> "GitTree":
@@ -156,6 +177,9 @@ class GitPack:
         return commits
 
     def __get_ofs_delta(self, f: BufferedReader, initial_offset: int, offset: int):
+        """
+        Reads negative offset and finds the referred deltified object
+        """
         f.seek(initial_offset - offset)
         (obj_type, size) = self.__read_pack_object_header(f)
         if obj_type == GitObjectType.NOT_SUPPORTED:
