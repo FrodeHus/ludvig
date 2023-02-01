@@ -2,7 +2,7 @@ import glob
 from io import BytesIO
 from typing import List
 from ._providers import BaseFileProvider
-from ._git import GitPackIndex, GitPack, GitMainIndex
+from ._git import GitPackIndex, GitPack, GitRepository
 import os
 from knack import log
 
@@ -19,26 +19,27 @@ class GitRepositoryProvider(BaseFileProvider):
     def get_files(self):
         repos = glob.iglob(os.path.join(self.path, "**/.git"), recursive=True)
         for repo in repos:
-            index = GitMainIndex(os.path.join(repo, "index"))
-            if not index:
-                return
-            obj_path = os.path.join(repo, "objects")
-
-            for (dir_path, _, file_names) in os.walk(obj_path):
-                for filename in file_names:
-                    f = os.path.join(dir_path, filename)
-                    if f.endswith(".idx"):
-                        pack_idx = GitPackIndex(f)
-                        with GitPack(f.replace(".idx", ".pack"), pack_idx) as pack:
-                            for commit in pack.commits:
-                                try:
-                                    tree = pack.get_pack_object(hash=commit.tree_hash)
-                                    for leaf in pack.walk_tree(tree):
-                                        content = pack.get_pack_object(hash=leaf.hash)
-                                        if not content:
-                                            continue
-                                        with BytesIO(content) as c:
-                                            yield c, leaf.path, commit.hash
-                                except Exception as ex:
-                                    logger.error(ex)
-                                    continue
+            pack_path = os.path.join(repo, "objects")
+            pack_files = []
+            for file in glob.iglob(
+                os.path.join(pack_path, "**/pack-*.pack"), recursive=True
+            ):
+                pack_name = file[:-5]
+                pack_files.append(pack_name)
+            with GitRepository(pack_files) as repo:
+                file_cache = []
+                for commit in repo.commits:
+                    try:
+                        tree = repo.get_pack_object(hash=commit.tree_hash)
+                        for leaf in repo.walk_tree(tree):
+                            if leaf.path in file_cache:
+                                continue
+                            content = repo.get_pack_object(hash=leaf.hash)
+                            if not content:
+                                continue
+                            file_cache.append(leaf.path)
+                            with BytesIO(content) as c:
+                                yield c, leaf.path, commit.hash
+                    except Exception as ex:
+                        logger.error(ex)
+                        continue

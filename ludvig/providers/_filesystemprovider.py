@@ -18,4 +18,4 @@ class FileSystemProvider(BaseFileProvider):
             ):
                 continue
             with open(filename, "rb") as f:
-                yield f, filename
+                yield f, filename, None

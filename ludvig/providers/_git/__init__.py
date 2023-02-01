@@ -4,4 +4,5 @@ from ._definitions import (
     GitTreeItem,
     GitMainIndex,
     GitObjectType,
+    GitRepository,
 )

@@ -82,12 +82,6 @@ class GitPackIndex(dict):
 
 class GitPack:
     def __init__(self, filename: str, idx: dict) -> None:
-        pack_file_size = os.stat(filename).st_size / (1024 * 1024)
-        if pack_file_size >= 100:
-            logger.warn(
-                "Git history is over 100MB (%dMB) - scanning will be slow",
-                pack_file_size,
-            )
         self.__fp = open(filename, "rb")
         self.idx = idx
         self.commits = self.__get_all_commits()
@@ -103,14 +97,17 @@ class GitPack:
         return None
 
     def get_pack_object(
-        self, hash: str = None, offset: int = None, meta_data_only=False
+        self,
+        hash: str = None,
+        offset: int = None,
+        meta_data_only=False,
+        delta: GitDelta = None,
     ):
         if hash:
             offset = self.get_offset_by_hash(hash)
         if not offset:
-            logger.warn("No offset or hash specified")
             return None
-        self.__fp.seek(offset)
+        self.__fp.seek(offset, 0)
         (obj_type, size) = self.__read_pack_object_header(self.__fp)
         if meta_data_only:
             return (offset, obj_type, size)
@@ -122,17 +119,20 @@ class GitPack:
             content = self.__parse_commit_message(content, hash)
         elif obj_type == GitObjectType.OBJ_BLOB:
             content = self.__read_compressed_object(self.__fp, size)
+            # if delta:
+            #     content = self.__apply_delta(content, delta)
         elif obj_type == GitObjectType.OBJ_TREE:
             content = self.__read_compressed_object(self.__fp, size)
             return self.__parse_tree(content)
         elif obj_type == GitObjectType.OBJ_REF_DELTA:
-            (obj_type, size) = self.__read_pack_object_header(self.__fp)
             object_name = binascii.hexlify(self.__fp.read(20)).decode("ascii")
-            content = self.__read_compressed_object(self.__fp, size)
+            content = self.get_pack_object(hash=object_name)
         elif obj_type == GitObjectType.OBJ_OFS_DELTA:
             delta_offset = self.__read_delta_offset(self.__fp)
             content = self.__read_compressed_object(self.__fp, size)
-            content = self.__get_ofs_delta(self.__fp, offset, delta_offset)
+            delta = self.__parse_delta_instructions(content)
+            content = self.__get_ofs_delta(self.__fp, offset, delta_offset, delta)
+
         return content
 
     def resolve_object_name(self, object_hash: str):
@@ -150,8 +150,12 @@ class GitPack:
                 leaf.path = os.path.join(path_prefix, leaf.path)
                 files.append(leaf)
             else:
-                tree = self.get_pack_object(hash=leaf.hash)
-                files.extend(self.walk_tree(tree, os.path.join(path_prefix, leaf.path)))
+                next_tree = self.get_pack_object(hash=leaf.hash)
+                if not next_tree:
+                    continue
+                files.extend(
+                    self.walk_tree(next_tree, os.path.join(path_prefix, leaf.path))
+                )
         return files
 
     def get_all_blob_offsets(self):
@@ -170,6 +174,13 @@ class GitPack:
                 tree = self.get_pack_object(hash=leaf.hash)
                 return self.__search_tree(tree, match_hash)
         return None
+
+    def __apply_delta(self, data: bytes, delta: GitDelta):
+        if delta.has_data():
+            lb = data[0 : delta.target_offset]
+            rb = data[delta.target_offset + delta.target_size :]
+            return lb + delta.data + rb
+        return data
 
     def __parse_tree(self, content) -> "GitTree":
         tree = []
@@ -202,7 +213,13 @@ class GitPack:
                 commits.append(commit)
         return commits
 
-    def __get_ofs_delta(self, f: BufferedReader, initial_offset: int, offset: int):
+    def __get_ofs_delta(
+        self,
+        f: BufferedReader,
+        initial_offset: int,
+        offset: int,
+        delta: GitDelta = None,
+    ):
         """
         Reads negative offset and finds the referred deltified object
         """
@@ -214,18 +231,55 @@ class GitPack:
             )
             return None
         if obj_type != GitObjectType.OBJ_OFS_DELTA:
-            return self.get_pack_object(offset=initial_offset - offset)
+            return self.get_pack_object(offset=initial_offset - offset, delta=delta)
         delta_offset = self.__read_delta_offset(f)
-        return self.__get_ofs_delta(f, initial_offset - offset, delta_offset)
+        return self.__get_ofs_delta(f, initial_offset - offset, delta_offset, delta)
 
     def __parse_delta_instructions(self, data):
         i, source_length = self.__msb_size(data)
         i, target_length = self.__msb_size(data, i)
-        c = data[0]
-        if c & 0x80:
-            instr = "copy"
-        else:
-            instr = "insert"
+        target_bytes = 0
+        while i < len(data):
+            c = data[i]
+            i += 1
+            if c & 0x80:  # MSB is set - copy instruction
+                cp_off, cp_size = 0, 0
+                if c & 0x01:
+                    cp_off = data[i]
+                    i += 1
+                if c & 0x02:
+                    cp_off |= data[i] << 8
+                    i += 1
+                if c & 0x04:
+                    cp_off |= data[i] << 16
+                    i += 1
+                if c & 0x08:
+                    cp_off |= data[i] << 24
+                    i += 1
+                if c & 0x10:
+                    cp_size = data[i]
+                    i += 1
+                if c & 0x20:
+                    cp_size |= data[i] << 8
+                    i += 1
+                if c & 0x40:
+                    cp_size |= data[i] << 16
+                    i += 1
+
+                if not cp_size:
+                    cp_size = 0x10000
+
+                rbound = cp_off + cp_size
+                if rbound < cp_size or rbound > source_length:
+                    break
+
+                delta = GitDelta(target_bytes, cp_size, cp_off, None)
+                target_bytes += cp_size
+            elif c:  # insert instruction
+                delta = GitDelta(target_bytes, c, 0, data[i : i + c])
+                i += c
+                target_bytes += c
+        return delta
 
     def __msb_size(self, data, offset=0):
         """
@@ -310,7 +364,7 @@ class GitPack:
 
     def __get_object_type(self, type: int):
         type_id = (type & 0x70) >> 4
-        if not type_id in range(1, 7):
+        if not type_id in range(1, 8):
             return GitObjectType.NOT_SUPPORTED
         if type_id == 1:
             return GitObjectType.OBJ_COMMIT
@@ -330,7 +384,11 @@ class GitPack:
         return self
 
     def __exit__(self, type, value, traceback):
-        self.__fp.close()
+        self.close()
+
+    def close(self):
+        if self.__fp:
+            self.__fp.close()
 
 
 class GitTreeItem:
@@ -359,6 +417,58 @@ class GitCommit:
         self.tree_hash = tree_hash
         self.auth = author
         self.comitter = committer
+
+
+class GitRepository:
+    def __init__(self, pack_files: List[str]) -> None:
+        self.__packs: List[GitPack] = []
+        self.commits = []
+        total_size = 0
+        for pf in pack_files:
+            total_size += os.stat(pf + ".pack").st_size / (1024 * 1024)
+            idx = GitPackIndex(pf + ".idx")
+
+            pack = GitPack(pf + ".pack", idx)
+            self.commits.extend(pack.commits)
+            self.__packs.append(pack)
+
+        if total_size > 100:
+            logger.warn(
+                "Git index is larger than 100 (%dMB) - scanning may be slow", total_size
+            )
+
+    def get_pack_object(
+        self, hash: str = None, offset: str = None, meta_data_only=False
+    ):
+        for pack in self.__packs:
+            found = pack.get_pack_object(
+                hash=hash, offset=offset, meta_data_only=meta_data_only
+            )
+            if found:
+                return found
+        return None
+
+    def walk_tree(self, tree: "GitTree", path_prefix=""):
+        files = []
+        for leaf in tree.leafs:
+            if leaf.mode != 40000 and leaf.mode != 160000:
+                leaf.path = os.path.join(path_prefix, leaf.path)
+                files.append(leaf)
+            else:
+                next_tree = self.get_pack_object(hash=leaf.hash)
+                if not next_tree:
+                    continue
+                files.extend(
+                    self.walk_tree(next_tree, os.path.join(path_prefix, leaf.path))
+                )
+        return files
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        for pack in self.__packs:
+            pack.close()
 
 
 class GitMainIndex(dict):
