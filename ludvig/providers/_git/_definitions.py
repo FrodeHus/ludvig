@@ -23,6 +23,22 @@ class GitObjectType(enum.Enum):
     OBJ_REF_DELTA = 7
 
 
+class GitDelta:
+    def __init__(
+        self, target_offset: int, target_size: int, source_offset: int, data
+    ) -> None:
+        self.target_offset = target_offset
+        self.target_size = target_size
+        self.source_offset = source_offset
+        self.data = data
+
+    def has_data(self):
+        """
+        true if this delta has data to add to the target
+        """
+        return self.data is not None
+
+
 def read(f: BufferedReader, format, byte_order="!"):
     format = "{}{}".format(byte_order, format)
     bytes = f.read(struct.calcsize(format))

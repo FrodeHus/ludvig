@@ -42,9 +42,3 @@ class GitRepositoryProvider(BaseFileProvider):
                                 except Exception as ex:
                                     logger.error(ex)
                                     continue
-                    # if f.endswith(".pack"):
-                    #     pack_file = self.__read_git_pack(f)
-                    # if self.is_excluded(f) or os.stat(f).st_size > self.max_file_size:
-                    #     continue
-                    # with BytesIO(self.__read_object(f)) as f:
-                    #     yield f, filename
