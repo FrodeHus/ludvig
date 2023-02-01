@@ -156,19 +156,25 @@ def read(f: BufferedReader, format, byte_order="!"):
     return struct.unpack(format, bytes)[0]
 
 
-class GitPackIndex:
-    def __init__(self, filename: str) -> None:
-        self.filename = filename
+class GitPackIndex(dict):
+    def __init__(self, idx_file: str):
+        idx = self.__read(idx_file)
+        super().__init__(idx)
 
-    def read(self):
+    def get_offset(self, object_hash: str):
+        object = [o for o in self["objects"] if o["name"] == object_hash]
+        if len(object) > 0:
+            return object[0]["offset"]
+
+    def __read(self, filename: str):
         # docs : https://git-scm.com/docs/pack-format, https://codewords.recurse.com/issues/three/unpacking-git-packfiles
-        idx = OrderedDict()
-        with open(self.filename, "rb") as f:
+        idx = {}
+        with open(filename, "rb") as f:
             signature = f.read(4)
             if signature != b"\xfftOc":
-                raise Exception("Not a Git pack index file: %s", self.filename)
+                raise Exception("Not a Git pack index file: %s", filename)
             idx["version"] = read(f, "I")
-            fan_out_table = OrderedDict()
+            fan_out_table = {}
             for n in range(256):
                 fan_out_table["%0.2X" % n] = read(f, "I")
             idx["total_objects"] = fan_out_table["FF"]
@@ -185,7 +191,7 @@ class GitPackIndex:
 
 
 class GitPack:
-    def __init__(self, filename: str, idx: OrderedDict) -> None:
+    def __init__(self, filename: str, idx: dict) -> None:
         self.filename = filename
         self.idx = idx
         (commits, blobs) = self.__filter_objects_by_type()
