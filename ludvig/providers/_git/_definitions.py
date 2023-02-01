@@ -94,7 +94,7 @@ class GitPack:
                 object_name = binascii.hexlify(f.read(20)).decode("ascii")
                 content = self.__read_compressed_object(f, size)
             elif obj_type == GitObjectType.OBJ_OFS_DELTA:
-                delta_offset = self.__read_msb(f)
+                delta_offset = self.__read_delta_offset(f)
                 content = self.__read_compressed_object(f, size)
                 # delta_offset = read_len(f, byte0)
                 obj_name = [
@@ -103,7 +103,7 @@ class GitPack:
                     if o["offset"] == (offset - delta_offset)
                 ]
                 parent_object_name = obj_name["name"] if "name" in obj_name else None
-                d = self.__get_ofs_delta(f, offset, delta_offset)
+                content = self.__get_ofs_delta(f, offset, delta_offset)
             return content
 
     def __parse_tree(self, content) -> "GitTree":
@@ -144,12 +144,15 @@ class GitPack:
     def __get_ofs_delta(self, f: BufferedReader, initial_offset: int, offset: int):
         f.seek(initial_offset - offset)
         (obj_type, size) = self.__read_pack_object_header(f)
-        if obj_type not in [GitObjectType.OBJ_BLOB, GitObjectType.OBJ_OFS_DELTA]:
+        if obj_type == GitObjectType.NOT_SUPPORTED:
+            logger.warn(
+                "unexpected delta content found at offset %d", initial_offset - offset
+            )
             return None
-        delta_offset = self.__read_msb(f)
-        content = self.__read_compressed_object(f, size)
-        self.__parse_delta_instructions(content)
-        return None
+        if obj_type != GitObjectType.OBJ_OFS_DELTA:
+            return self.get_pack_object(initial_offset - offset)
+        delta_offset = self.__read_delta_offset(f)
+        return self.__get_ofs_delta(f, initial_offset - offset, delta_offset)
 
     def __parse_delta_instructions(self, data):
         i, source_length = self.__msb_size(data)
@@ -161,6 +164,9 @@ class GitPack:
             instr = "insert"
 
     def __msb_size(self, data, offset=0):
+        """
+        Reads variable-length size from byte array
+        """
         size = 0
         i = 0
         l = len(data)
@@ -210,14 +216,18 @@ class GitPack:
         size += (byte0 & 0x7F) << s
         return (obj_type, size)
 
-    def __read_msb(self, f: BufferedReader):
-        size = 0
+    def __read_delta_offset(self, f: BufferedReader):
+        """
+        Reads variable-length negative offset value (for finding next ofs_delta)
+        """
         byte0 = read(f, "B")
+        delta_offset = byte0 & 0x7F
         while byte0 & 0x80:
-            size += (byte0 & 0x7F) << 7
             byte0 = read(f, "B")
+            delta_offset += 1
+            delta_offset = (delta_offset << 7) + (byte0 & 0x7F)
 
-        return size
+        return delta_offset
 
     def __read_git_pack(self):
         # docs : https://git-scm.com/docs/pack-format, https://codewords.recurse.com/issues/three/unpacking-git-packfiles

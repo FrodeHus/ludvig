@@ -44,9 +44,3 @@ class TestParseGitHistory(TestCase):
         tree = pack.get_pack_object(offset)
         self.assertEqual(len(tree.leafs), 2)
         self.assertTrue([o.path for o in tree.leafs] == ["README.md", "test"])
-
-    def test_build_chain(self):
-        idx_file = os.path.join(os.path.dirname(__file__), "fixtures/pack.idx")
-        idx = GitPackIndex(idx_file)
-        pack_file = os.path.join(os.path.dirname(__file__), "fixtures/pack.pack")
-        pack = GitPack(pack_file, idx)

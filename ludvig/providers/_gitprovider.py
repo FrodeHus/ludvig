@@ -1,9 +1,8 @@
-import binascii
 import glob
 from io import BytesIO
 from typing import List
 from ._providers import BaseFileProvider
-from ._git import GitPackIndex, GitPack, GitTreeItem, GitMainIndex
+from ._git import GitPackIndex, GitPack, GitMainIndex
 import os
 from knack import log
 
@@ -34,9 +33,7 @@ class GitRepositoryProvider(BaseFileProvider):
                         for commit_sha in pack.commits:
                             try:
                                 commit = pack.commits[commit_sha]
-                                if commit.parent_hash:
-                                    continue
-                                tree_object_name = commit["info"]["tree"]
+                                tree_object_name = commit.tree_hash
                                 tree_offset = [
                                     o["offset"]
                                     for o in pack_idx["objects"]
@@ -44,24 +41,6 @@ class GitRepositoryProvider(BaseFileProvider):
                                 ][0]
                                 content = pack.get_pack_object(tree_offset)
 
-                                i = 0
-                                tree = []
-                                while i < len(content):
-                                    x = content.find(b" ", i)
-                                    if x == -1:
-                                        i += 1
-                                        continue
-                                    mode = content[i:x]
-                                    i = x + 1
-                                    x = content.find(b"\x00", x)
-                                    path = content[i:x]
-                                    i += (x - i) + 1
-                                    x = i + 20
-                                    sha = binascii.hexlify(content[i:x]).decode("ascii")
-                                    i = x
-                                    tree_item = GitTreeItem(path, mode, sha)
-                                    tree.append(tree_item)
-                                commit["tree"] = tree
                             except:
                                 continue
                         for obj in pack.blobs:
