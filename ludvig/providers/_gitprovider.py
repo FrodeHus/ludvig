@@ -30,19 +30,6 @@ class GitRepositoryProvider(BaseFileProvider):
                     if f.endswith(".idx"):
                         pack_idx = GitPackIndex(f)
                         pack = GitPack(f.replace(".idx", ".pack"), pack_idx)
-                        for commit_sha in pack.commits:
-                            try:
-                                commit = pack.commits[commit_sha]
-                                tree_object_name = commit.tree_hash
-                                tree_offset = [
-                                    o["offset"]
-                                    for o in pack_idx["objects"]
-                                    if o["name"] == tree_object_name
-                                ][0]
-                                content = pack.get_pack_object(tree_offset)
-
-                            except:
-                                continue
                         for obj in pack.blobs:
                             try:
                                 content = pack.get_pack_object(

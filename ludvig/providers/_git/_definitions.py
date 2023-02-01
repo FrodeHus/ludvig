@@ -66,9 +66,7 @@ class GitPack:
     def __init__(self, filename: str, idx: dict) -> None:
         self.filename = filename
         self.idx = idx
-        (commits, blobs) = self.__filter_objects_by_type()
-        self.commits = commits
-        self.blobs = blobs
+        self.commits = self.__get_all_commits()
         self.entries = self.__read_git_pack()
 
     def get_pack_object(self, offset: int):
@@ -106,6 +104,25 @@ class GitPack:
                 content = self.__get_ofs_delta(f, offset, delta_offset)
             return content
 
+    def resolve_object_name(self, object_hash: str):
+        for commit in self.commits:
+            offset = self.idx.get_offset(commit.tree_hash)
+            tree = self.get_pack_object(offset)
+            leaf = self.__walk_tree(tree, object_hash)
+            if leaf:
+                return leaf.path
+            return None
+
+    def __walk_tree(self, tree: "GitTree", match_hash: str):
+        for leaf in tree.leafs:
+            if leaf.hash == match_hash:
+                return leaf
+            if leaf.mode == 40000:
+                tree_offset = self.idx.get_offset(leaf.hash)
+                tree = self.get_pack_object(tree_offset)
+                return self.__walk_tree(tree, match_hash)
+        return None
+
     def __parse_tree(self, content) -> "GitTree":
         tree = []
         i = 0
@@ -114,7 +131,7 @@ class GitPack:
             if x == -1:
                 i += 1
                 continue
-            mode = content[i:x]
+            mode = int(content[i:x])
             i = x + 1
             x = content.find(b"\x00", x)
             path = content[i:x].decode("utf-8")
@@ -126,20 +143,17 @@ class GitPack:
             tree.append(tree_item)
         return GitTree(tree)
 
-    def __filter_objects_by_type(self):
-        commits = {}
-        blobs = {}
+    def __get_all_commits(self):
+        commits = []
         with open(self.filename, "rb") as f:
             for obj in self.idx["objects"]:
                 f.seek(obj["offset"])
                 (obj_type, size) = self.__read_pack_object_header(f)
-                if obj_type == GitObjectType.OBJ_BLOB:
-                    blobs[obj["name"]] = {"offset": obj["offset"], "deltas": []}
-                elif obj_type == GitObjectType.OBJ_COMMIT:
+                if obj_type == GitObjectType.OBJ_COMMIT:
                     content = self.__read_compressed_object(f, size)
                     commit = self.__parse_commit_message(content)
-                    commits[obj["name"]] = commit
-        return (commits, blobs)
+                    commits.append(commit)
+        return commits
 
     def __get_ofs_delta(self, f: BufferedReader, initial_offset: int, offset: int):
         f.seek(initial_offset - offset)
