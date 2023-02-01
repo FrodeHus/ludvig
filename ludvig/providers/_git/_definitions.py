@@ -72,7 +72,7 @@ class GitPack:
                 "Git history is over 100MB (%dMB) - scanning will be slow",
                 pack_file_size,
             )
-        self.filename = filename
+        self.__fp = open(filename, "rb")
         self.idx = idx
         self.commits = self.__get_all_commits()
         self.entries = self.__read_git_pack()
@@ -81,31 +81,30 @@ class GitPack:
         return self.idx.get_offset(hash)
 
     def get_pack_object(self, offset: int, meta_data_only=False):
-        with open(self.filename, "rb") as f:
-            f.seek(offset)
-            (obj_type, size) = self.__read_pack_object_header(f)
-            if meta_data_only:
-                return (offset, obj_type, size)
-            content = None
-            if obj_type == GitObjectType.NOT_SUPPORTED:
-                return
-            if obj_type == GitObjectType.OBJ_COMMIT:
-                content = self.__read_compressed_object(f, size)
-                content = self.__parse_commit_message(content)
-            elif obj_type == GitObjectType.OBJ_BLOB:
-                content = self.__read_compressed_object(f, size)
-            elif obj_type == GitObjectType.OBJ_TREE:
-                content = self.__read_compressed_object(f, size)
-                return self.__parse_tree(content)
-            elif obj_type == GitObjectType.OBJ_REF_DELTA:
-                (obj_type, size) = self.__read_pack_object_header(f)
-                object_name = binascii.hexlify(f.read(20)).decode("ascii")
-                content = self.__read_compressed_object(f, size)
-            elif obj_type == GitObjectType.OBJ_OFS_DELTA:
-                delta_offset = self.__read_delta_offset(f)
-                content = self.__read_compressed_object(f, size)
-                content = self.__get_ofs_delta(f, offset, delta_offset)
-            return content
+        self.__fp.seek(offset)
+        (obj_type, size) = self.__read_pack_object_header(self.__fp)
+        if meta_data_only:
+            return (offset, obj_type, size)
+        content = None
+        if obj_type == GitObjectType.NOT_SUPPORTED:
+            return
+        if obj_type == GitObjectType.OBJ_COMMIT:
+            content = self.__read_compressed_object(self.__fp, size)
+            content = self.__parse_commit_message(content)
+        elif obj_type == GitObjectType.OBJ_BLOB:
+            content = self.__read_compressed_object(self.__fp, size)
+        elif obj_type == GitObjectType.OBJ_TREE:
+            content = self.__read_compressed_object(self.__fp, size)
+            return self.__parse_tree(content)
+        elif obj_type == GitObjectType.OBJ_REF_DELTA:
+            (obj_type, size) = self.__read_pack_object_header(self.__fp)
+            object_name = binascii.hexlify(f.read(20)).decode("ascii")
+            content = self.__read_compressed_object(self.__fp, size)
+        elif obj_type == GitObjectType.OBJ_OFS_DELTA:
+            delta_offset = self.__read_delta_offset(self.__fp)
+            content = self.__read_compressed_object(self.__fp, size)
+            content = self.__get_ofs_delta(self.__fp, offset, delta_offset)
+        return content
 
     def resolve_object_name(self, object_hash: str):
         for commit in self.commits:
@@ -166,14 +165,13 @@ class GitPack:
 
     def __get_all_commits(self):
         commits = []
-        with open(self.filename, "rb") as f:
-            for obj in self.idx["objects"]:
-                f.seek(obj["offset"])
-                (obj_type, size) = self.__read_pack_object_header(f)
-                if obj_type == GitObjectType.OBJ_COMMIT:
-                    content = self.__read_compressed_object(f, size)
-                    commit = self.__parse_commit_message(content)
-                    commits.append(commit)
+        for obj in self.idx["objects"]:
+            self.__fp.seek(obj["offset"])
+            (obj_type, size) = self.__read_pack_object_header(self.__fp)
+            if obj_type == GitObjectType.OBJ_COMMIT:
+                content = self.__read_compressed_object(self.__fp, size)
+                commit = self.__parse_commit_message(content)
+                commits.append(commit)
         return commits
 
     def __get_ofs_delta(self, f: BufferedReader, initial_offset: int, offset: int):
@@ -270,15 +268,15 @@ class GitPack:
     def __read_git_pack(self):
         # docs : https://git-scm.com/docs/pack-format, https://codewords.recurse.com/issues/three/unpacking-git-packfiles
         pack = {}
-        with open(self.filename, "rb") as f:
-            signature = f.read(4).decode("ascii")
-            if signature != "PACK":
-                raise Exception("Not a Git pack file: %s", self.filename)
-            pack["version"] = read(f, "I")
-            num_entries = read(f, "I")
-            pack["total_objects"] = num_entries
-            for n in range(num_entries):
-                pass
+        self.__fp.seek(0)
+        signature = self.__fp.read(4).decode("ascii")
+        if signature != "PACK":
+            raise Exception("Not a Git pack file: %s", self.filename)
+        pack["version"] = read(self.__fp, "I")
+        num_entries = read(self.__fp, "I")
+        pack["total_objects"] = num_entries
+        for n in range(num_entries):
+            pass
         return pack
 
     def __get_object_type(self, type: int):
@@ -298,6 +296,12 @@ class GitPack:
         elif type_id == 7:
             return GitObjectType.OBJ_REF_DELTA
         return GitObjectType.NOT_SUPPORTED
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.__fp.close()
 
 
 class GitTreeItem:
