@@ -2,6 +2,7 @@ import binascii
 import enum
 from io import BufferedReader
 import struct
+from typing import List
 import zlib
 from knack import log
 
@@ -87,6 +88,7 @@ class GitPack:
                 content = self.__read_compressed_object(f, size)
             elif obj_type == GitObjectType.OBJ_TREE:
                 content = self.__read_compressed_object(f, size)
+                return self.__parse_tree(content)
             elif obj_type == GitObjectType.OBJ_REF_DELTA:
                 (obj_type, size) = self.__read_pack_object_header(f)
                 object_name = binascii.hexlify(f.read(20)).decode("ascii")
@@ -104,6 +106,26 @@ class GitPack:
                 d = self.__get_ofs_delta(f, offset, delta_offset)
             return content
 
+    def __parse_tree(self, content) -> "GitTree":
+        tree = []
+        i = 0
+        while i < len(content):
+            x = content.find(b" ", i)
+            if x == -1:
+                i += 1
+                continue
+            mode = content[i:x]
+            i = x + 1
+            x = content.find(b"\x00", x)
+            path = content[i:x].decode("utf-8")
+            i += (x - i) + 1
+            x = i + 20
+            sha = binascii.hexlify(content[i:x]).decode("ascii")
+            i = x
+            tree_item = GitTreeItem(path, mode, sha)
+            tree.append(tree_item)
+        return GitTree(tree)
+
     def __filter_objects_by_type(self):
         commits = {}
         blobs = {}
@@ -115,8 +137,8 @@ class GitPack:
                     blobs[obj["name"]] = {"offset": obj["offset"], "deltas": []}
                 elif obj_type == GitObjectType.OBJ_COMMIT:
                     content = self.__read_compressed_object(f, size)
-                    info = self.__parse_commit_message(content)
-                    commits[obj["name"]] = {"offset": obj["offset"], "info": info}
+                    commit = self.__parse_commit_message(content)
+                    commits[obj["name"]] = commit
         return (commits, blobs)
 
     def __get_ofs_delta(self, f: BufferedReader, initial_offset: int, offset: int):
@@ -162,7 +184,12 @@ class GitPack:
                 info["author"] = " ".join(line.split()[1:-2])
             elif line.startswith("committer"):
                 info["comitter"] = " ".join(line.split()[1:-2])
-        return info
+        return GitCommit(
+            info["parent"] if "parent" in info else None,
+            info["tree"],
+            info["author"],
+            info["comitter"],
+        )
 
     def __read_compressed_object(self, f: BufferedReader, size: int):
         try:
@@ -230,6 +257,21 @@ class GitTreeItem:
         self.path = path
         self.mode = mode
         self.hash = hash
+
+
+class GitTree:
+    def __init__(self, items=List[GitTreeItem]) -> None:
+        self.leafs = items
+
+
+class GitCommit:
+    def __init__(
+        self, parent_hash: str, tree_hash: str, author: str, committer: str
+    ) -> None:
+        self.parent_hash = parent_hash
+        self.tree_hash = tree_hash
+        self.auth = author
+        self.comitter = committer
 
 
 class GitMainIndex(dict):

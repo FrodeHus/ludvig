@@ -27,15 +27,23 @@ class TestParseGitHistory(TestCase):
         pack = GitPack(pack_file, idx)
         self.assertIn("929a22af97c28bfb4f0c5e9d29303039a3d7829c", pack.commits)
         commit = pack.commits["929a22af97c28bfb4f0c5e9d29303039a3d7829c"]
-        self.assertEqual(
-            commit["info"]["tree"], "ce0ca7966eeebc9ca709c921ebca0bbfdecaed9b"
-        )
+        self.assertEqual(commit.tree_hash, "ce0ca7966eeebc9ca709c921ebca0bbfdecaed9b")
 
     def test_retrieve_object_offset(self):
         idx_file = os.path.join(os.path.dirname(__file__), "fixtures/pack.idx")
         idx = GitPackIndex(idx_file)
         offset = idx.get_offset("085b1ca796dfc5b6d0a87c3e43146c3667e733b1")
         self.assertEqual(offset, 136)
+
+    def test_parse_git_tree(self):
+        idx_file = os.path.join(os.path.dirname(__file__), "fixtures/pack.idx")
+        idx = GitPackIndex(idx_file)
+        pack_file = os.path.join(os.path.dirname(__file__), "fixtures/pack.pack")
+        pack = GitPack(pack_file, idx)
+        offset = idx.get_offset("ce0ca7966eeebc9ca709c921ebca0bbfdecaed9b")
+        tree = pack.get_pack_object(offset)
+        self.assertEqual(len(tree.leafs), 2)
+        self.assertTrue([o.path for o in tree.leafs] == ["README.md", "test"])
 
     def test_build_chain(self):
         idx_file = os.path.join(os.path.dirname(__file__), "fixtures/pack.idx")

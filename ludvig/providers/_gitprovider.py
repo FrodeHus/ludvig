@@ -34,6 +34,8 @@ class GitRepositoryProvider(BaseFileProvider):
                         for commit_sha in pack.commits:
                             try:
                                 commit = pack.commits[commit_sha]
+                                if commit.parent_hash:
+                                    continue
                                 tree_object_name = commit["info"]["tree"]
                                 tree_offset = [
                                     o["offset"]
