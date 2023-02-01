@@ -5,7 +5,7 @@ from knack import CLI, ArgumentsContext, CLICommandsLoader
 from knack.commands import CommandGroup
 from knack.invocation import CommandInvoker
 import ludvig._help  # pylint: disable=unused-import
-from ludvig._format import transform_finding_list
+from ludvig._format import transform_finding_list, transform_git_finding_list
 
 
 class LudvigCommandsLoader(CLICommandsLoader):
@@ -21,7 +21,7 @@ class LudvigCommandsLoader(CLICommandsLoader):
         ) as g:
             g.command("scan", "scan", table_transformer=transform_finding_list)
         with CommandGroup(self, "git", "ludvig.commands.git#{}") as g:
-            g.command("scan", "scan", table_transformer=transform_finding_list)
+            g.command("scan", "scan", table_transformer=transform_git_finding_list)
         with CommandGroup(self, "rules", "ludvig.commands.rules#{}") as g:
             g.command("download", "download")
             g.command("add repo", "add_repo")

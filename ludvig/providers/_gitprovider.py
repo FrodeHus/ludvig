@@ -32,23 +32,13 @@ class GitRepositoryProvider(BaseFileProvider):
                         with GitPack(f.replace(".idx", ".pack"), pack_idx) as pack:
                             for commit in pack.commits:
                                 try:
-                                    tree = pack.get_pack_object(
-                                        pack.get_offset_by_hash(commit.tree_hash)
-                                    )
+                                    tree = pack.get_pack_object(hash=commit.tree_hash)
                                     for leaf in pack.walk_tree(tree):
-                                        offset = pack.get_offset_by_hash(leaf.hash)
-                                        if not offset:
-                                            logger.warn(
-                                                "could not find blob '%s' offset from hash %s",
-                                                leaf.path,
-                                                leaf.hash,
-                                            )
-                                            continue
-                                        content = pack.get_pack_object(offset)
+                                        content = pack.get_pack_object(hash=leaf.hash)
                                         if not content:
                                             continue
                                         with BytesIO(content) as c:
-                                            yield c, leaf.path
+                                            yield c, leaf.path, commit.hash
                                 except Exception as ex:
                                     logger.error(ex)
                                     continue
