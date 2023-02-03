@@ -34,12 +34,7 @@ class BaseScanner:
                 )
                 if severity < self.severity_level:
                     continue
-                if file_data.tell() < 1048576:
-                    file_data.seek(0)
-                    fd = file_data.read(match.strings[0][0])
-                    line = fd.count(b"\n") + 1
-                else:
-                    line = -1
+                line = self.find_match_line_num(file_data, match)
                 samples = FindingSample.from_yara_match(match, self.deobfuscated, line)
                 findings.append(
                     SecretFinding(YaraRuleMatch(match), samples, file_name, **kwargs)
@@ -48,3 +43,9 @@ class BaseScanner:
             return print(ex)
         finally:
             return findings
+
+    def find_match_line_num(self, file_data, match):
+        file_data.seek(0)
+        fd = file_data.read(match.strings[0][0])
+        line = fd.count(b"\n") + 1
+        return line

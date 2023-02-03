@@ -5,7 +5,7 @@ from knack import CLI, ArgumentsContext, CLICommandsLoader
 from knack.commands import CommandGroup
 from knack.invocation import CommandInvoker
 import ludvig._help  # pylint: disable=unused-import
-from ludvig._format import transform_finding_list
+from ludvig._format import transform_finding_list, transform_git_finding_list
 
 
 class LudvigCommandsLoader(CLICommandsLoader):
@@ -20,6 +20,8 @@ class LudvigCommandsLoader(CLICommandsLoader):
             self, "fs", "ludvig.commands.filesystem#{}", help="File system operations"
         ) as g:
             g.command("scan", "scan", table_transformer=transform_finding_list)
+        with CommandGroup(self, "git", "ludvig.commands.git#{}") as g:
+            g.command("scan", "scan", table_transformer=transform_git_finding_list)
         with CommandGroup(self, "rules", "ludvig.commands.rules#{}") as g:
             g.command("download", "download")
             g.command("add repo", "add_repo")
@@ -32,6 +34,11 @@ class LudvigCommandsLoader(CLICommandsLoader):
             )
             ac.argument("max_file_size", type=int)
         with ArgumentsContext(self, "fs") as ac:
+            ac.argument(
+                "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
+            )
+            ac.argument("max_file_size", type=int)
+        with ArgumentsContext(self, "git") as ac:
             ac.argument(
                 "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
             )
