@@ -2,7 +2,7 @@ import glob
 from io import BytesIO
 from typing import List
 from ._providers import BaseFileProvider
-from ._git import GitPackIndex, GitPack, GitRepository
+from ._git import GitRepository
 import os
 from knack import log
 
@@ -29,11 +29,14 @@ class GitRepositoryProvider(BaseFileProvider):
             with GitRepository(pack_files) as repo:
                 for commit in repo.commits:
                     try:
-                        tree = repo.get_pack_object(hash=commit.tree_hash)
+                        tree = repo.get_tree(hash=commit.tree_hash)
+                        if not tree:
+                            logger.warn("failed to read tree %s", commit.tree_hash)
+                            continue
                         for leaf in repo.walk_tree(tree):
                             if self.is_excluded(leaf.path):
                                 continue
-                            content = repo.get_pack_object(hash=leaf.hash)
+                            content, _ = repo.get_pack_object(hash=leaf.hash)
                             if not content:
                                 continue
                             with BytesIO(content) as c:

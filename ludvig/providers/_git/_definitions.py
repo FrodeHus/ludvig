@@ -12,6 +12,8 @@ logger = log.get_logger(__name__)
 byte_order_network = "!"
 byte_order_little_endian = "<"
 
+# handy docs: https://shafiul.github.io//gitbook/7_the_packfile.html, https://git-scm.com/docs/pack-format, https://codewords.recurse.com/issues/three/unpacking-git-packfiles
+
 
 class GitObjectType(enum.Enum):
     NOT_SUPPORTED = 0
@@ -57,7 +59,6 @@ class GitPackIndex(dict):
         return None
 
     def __read(self, filename: str):
-        # docs : https://git-scm.com/docs/pack-format, https://codewords.recurse.com/issues/three/unpacking-git-packfiles
         idx = {}
         with open(filename, "rb") as f:
             signature = f.read(4)
@@ -101,7 +102,6 @@ class GitPack:
         hash: str = None,
         offset: int = None,
         meta_data_only=False,
-        delta_list: List[GitDelta] = [],
     ):
         if hash:
             offset = self.get_offset_by_hash(hash)
@@ -116,25 +116,36 @@ class GitPack:
             return
         if obj_type == GitObjectType.OBJ_COMMIT:
             content = self.__read_compressed_object(self.__fp, size)
-            # content = self.__apply_delta_list(content, delta_list)
-            content = self.__parse_commit_message(content, hash)
+            return self.__parse_commit_message(content, hash)
         elif obj_type == GitObjectType.OBJ_BLOB:
             content = self.__read_compressed_object(self.__fp, size)
-            content = self.__apply_delta_list(content, delta_list)
         elif obj_type == GitObjectType.OBJ_TREE:
             content = self.__read_compressed_object(self.__fp, size)
-            # content = self.__apply_delta_list(content, delta_list)
-            return self.__parse_tree(content)
         elif obj_type == GitObjectType.OBJ_REF_DELTA:
             object_name = binascii.hexlify(self.__fp.read(20)).decode("ascii")
             content = self.get_pack_object(hash=object_name)
         elif obj_type == GitObjectType.OBJ_OFS_DELTA:
             delta_offset = self.__read_delta_offset(self.__fp)
             content = self.__read_compressed_object(self.__fp, size)
-            delta_list = self.__parse_delta_instructions(content)
-            content = self.__get_ofs_delta(self.__fp, offset, delta_offset, delta_list)
+            content, obj_type = self.__parse_delta(content, delta_offset, offset)
 
-        return content
+        return content, obj_type, size
+
+    def __parse_delta(self, delta_data, base_object_offset: int, current_offset: int):
+        delta_list = self.__parse_delta_instructions(delta_data)
+        base_obj, obj_type, size = self.get_pack_object(
+            offset=current_offset - base_object_offset
+        )
+
+        if obj_type == GitObjectType.OBJ_OFS_DELTA:
+            delta_offset = self.__read_delta_offset(self.__fp)
+            content = self.__read_compressed_object(self.__fp, size)
+            return self.__parse_delta(
+                content, delta_offset, current_offset - base_object_offset
+            )
+        else:
+            assembled_object = self.__apply_delta_list(base_obj, delta_list)
+            return assembled_object, obj_type
 
     def resolve_object_name(self, object_hash: str):
         for commit in self.commits:
@@ -177,6 +188,8 @@ class GitPack:
         return None
 
     def __apply_delta_list(self, source, delta_list: List[GitDelta] = []):
+        if len(delta_list) == 0:
+            return source
         deltas_applied = b""
         for delta in delta_list:
             deltas_applied = self.__apply_delta(source, deltas_applied, delta)
@@ -184,33 +197,12 @@ class GitPack:
 
     def __apply_delta(self, source, data: bytes, delta: GitDelta):
         if delta.has_data():
-            lb = data[0 : delta.target_offset]
-            return lb + delta.data
+            return data + delta.data
         else:
             return (
                 data
                 + source[delta.source_offset : delta.source_offset + delta.target_size]
             )
-
-    def __parse_tree(self, content) -> "GitTree":
-        tree = []
-        i = 0
-        while i < len(content):
-            x = content.find(b" ", i)
-            if x == -1:
-                i += 1
-                continue
-            mode = int(content[i:x])
-            i = x + 1
-            x = content.find(b"\x00", x)
-            path = content[i:x].decode("utf-8")
-            i += (x - i) + 1
-            x = i + 20
-            sha = binascii.hexlify(content[i:x]).decode("ascii")
-            i = x
-            tree_item = GitTreeItem(path, mode, sha)
-            tree.append(tree_item)
-        return GitTree(tree)
 
     def __get_all_commits(self):
         commits = []
@@ -245,6 +237,9 @@ class GitPack:
                 offset=initial_offset - offset, delta_list=delta_list
             )
         delta_offset = self.__read_delta_offset(f)
+        content = self.__read_compressed_object(self.__fp, size)
+        delta_list.extend(self.__parse_delta_instructions(content))
+
         return self.__get_ofs_delta(
             f, initial_offset - offset, delta_offset, delta_list
         )
@@ -454,31 +449,64 @@ class GitRepository:
                 "Git index is larger than 100 (%dMB) - scanning may be slow", total_size
             )
 
+    def get_tree(self, hash: str = None, offset: str = None):
+        content, obj_type = self.get_pack_object(hash, offset)
+        if obj_type != GitObjectType.OBJ_TREE:
+            raise Exception("requested tree object, got {}".format(obj_type.name))
+        return self.__parse_tree(content)
+
     def get_pack_object(
         self, hash: str = None, offset: str = None, meta_data_only=False
     ):
         for pack in self.__packs:
-            found = pack.get_pack_object(
+            found, obj_type, _ = pack.get_pack_object(
                 hash=hash, offset=offset, meta_data_only=meta_data_only
             )
             if found:
-                return found
-        return None
+                return found, obj_type
+        return None, GitObjectType.NOT_SUPPORTED
 
     def walk_tree(self, tree: "GitTree", path_prefix=""):
         files = []
+        if not hasattr(tree, "leafs"):
+            logger.warn("tree has no leafs")
+            return files
         for leaf in tree.leafs:
             if leaf.mode != 40000 and leaf.mode != 160000:
                 leaf.path = os.path.join(path_prefix, leaf.path)
                 files.append(leaf)
             else:
-                next_tree = self.get_pack_object(hash=leaf.hash)
+                next_tree = self.get_tree(hash=leaf.hash)
                 if not next_tree:
                     continue
                 files.extend(
                     self.walk_tree(next_tree, os.path.join(path_prefix, leaf.path))
                 )
         return files
+
+    def __parse_tree(self, content) -> "GitTree":
+        tree = []
+        i = 0
+        while i < len(content):
+            try:
+                x = content.find(b" ", i)
+                if x == -1:
+                    i += 1
+                    continue
+                mode = int(content[i:x])
+                i = x + 1
+                x = content.find(b"\x00", x)
+                path = content[i:x].decode("utf-8")
+                i += (x - i) + 1
+                x = i + 20
+                sha = binascii.hexlify(content[i:x]).decode("ascii")
+                i = x
+                tree_item = GitTreeItem(path, mode, sha)
+                tree.append(tree_item)
+            except Exception as ex:
+                logger.warn("failed to parse git tree: %s", ex)
+                return None
+        return GitTree(tree)
 
     def __enter__(self):
         return self
