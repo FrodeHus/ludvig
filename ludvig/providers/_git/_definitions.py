@@ -1,5 +1,6 @@
 import binascii
 import enum
+import hashlib
 from io import BufferedReader
 import os
 import struct
@@ -146,14 +147,6 @@ class GitPack:
         else:
             assembled_object = self.__apply_delta_list(base_obj, delta_list)
             return assembled_object, obj_type
-
-    def resolve_object_name(self, object_hash: str):
-        for commit in self.commits:
-            tree = self.get_pack_object(hash=commit.tree_hash)
-            leaf = self.__search_tree(tree, object_hash)
-            if leaf:
-                return leaf.path
-        return None
 
     def walk_tree(self, tree: "GitTree", path_prefix=""):
         files = []
@@ -332,7 +325,6 @@ class GitPack:
         return delta_offset
 
     def __read_git_pack(self):
-        # docs : https://git-scm.com/docs/pack-format, https://codewords.recurse.com/issues/three/unpacking-git-packfiles
         pack = {}
         self.__fp.seek(0)
         signature = self.__fp.read(4).decode("ascii")
