@@ -415,7 +415,9 @@ class GitRepository:
     def get_tree(self, hash: str = None, offset: str = None):
         content, obj_type, _ = self.get_pack_object(hash, offset)
         if obj_type != GitObjectType.OBJ_TREE:
-            raise Exception("requested tree object, got {}".format(obj_type.name))
+            raise Exception(
+                "requested tree object {}, got {}".format(hash or offset, obj_type.name)
+            )
         return self.__parse_tree(content)
 
     def get_pack_object(
