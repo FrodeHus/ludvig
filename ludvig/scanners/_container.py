@@ -66,7 +66,7 @@ class ImageScanner(BaseScanner):
             findings = self.scan_file_data(
                 file.file_data, file_name, docker_instruction=layer_created_by
             )
-            self.findings.extend(findings)
+            self.register_findings(findings)
 
     def __whiteout(self, filename: str, layer_created_by: str):
         finding = [

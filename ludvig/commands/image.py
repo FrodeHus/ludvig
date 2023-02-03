@@ -30,10 +30,10 @@ def scan(
     if output_sarif:
         from ludvig.outputs import SarifConverter
 
-        report = SarifConverter.from_findings(scanner.findings)
+        report = SarifConverter.from_findings(scanner.get_unique_findings())
         with open(output_sarif, "w") as r:
             r.write(report)
-    return scanner.findings
+    return scanner.get_unique_findings()
 
 
 def list_whiteouts(repository: str, include_first_layer=False):

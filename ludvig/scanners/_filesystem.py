@@ -20,4 +20,4 @@ class FilesystemScanner(BaseScanner):
     def scan(self):
         for file_data, filename, extra in self.provider.get_files():
             findings = self.scan_file_data(file_data, filename, meta=extra)
-            self.findings.extend(findings)
+            self.register_findings(findings)

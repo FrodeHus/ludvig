@@ -18,6 +18,7 @@ class BaseScanner:
 
         yara_rules = load_yara_rules(current_config.compiled_rules)
         self.__yara_rules = yara_rules
+        self.__findings: List[Finding] = []
 
     def scan_file_data(
         self, file_data: IO[bytes], file_name: str, **kwargs
@@ -36,9 +37,10 @@ class BaseScanner:
                     continue
                 line = self.find_match_line_num(file_data, match)
                 samples = FindingSample.from_yara_match(match, self.deobfuscated, line)
-                findings.append(
-                    SecretFinding(YaraRuleMatch(match), samples, file_name, **kwargs)
+                finding = SecretFinding(
+                    YaraRuleMatch(match), samples, file_name, **kwargs
                 )
+                findings.append(finding)
         except Exception as ex:
             return print(ex)
         finally:
@@ -49,3 +51,20 @@ class BaseScanner:
         fd = file_data.read(match.strings[0][0])
         line = fd.count(b"\n") + 1
         return line
+
+    def register_findings(self, findings: List[Finding]):
+        unique_hashes = {f.hash for f in self.findings}
+        for finding in findings:
+            if finding.hash in unique_hashes:
+                continue
+            self.__findings.append(finding)
+
+    def get_unique_findings(self):
+        unique_hashes = list({f.hash for f in self.__findings})
+        unique_findings = []
+        for finding in self.__findings:
+            if finding.hash in unique_hashes:
+                unique_findings.append(finding)
+                unique_hashes.remove(finding.hash)
+
+        return unique_findings

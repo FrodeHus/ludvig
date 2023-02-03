@@ -4,6 +4,7 @@ import os
 from typing import List
 import yara
 from ludvig.rules import RuleSetSource
+import hashlib
 
 
 class ConfigEncoder(json.JSONEncoder):
@@ -157,6 +158,11 @@ class Finding:
         self.severity = match.severity
         self.comment = None
         self.properties = {category: category}
+        self.hash = hashlib.sha1(
+            "|".join(
+                [self.name, self.filename, "@".join([s.content for s in self.samples])]
+            ).encode()
+        ).hexdigest()
 
 
 class SecretFinding(Finding):
