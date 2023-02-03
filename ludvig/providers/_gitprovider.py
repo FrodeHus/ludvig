@@ -36,8 +36,8 @@ class GitRepositoryProvider(BaseFileProvider):
                         for leaf in repo.walk_tree(tree):
                             if self.is_excluded(leaf.path):
                                 continue
-                            content, _ = repo.get_pack_object(hash=leaf.hash)
-                            if not content:
+                            content, _, size = repo.get_pack_object(hash=leaf.hash)
+                            if not content or size > self.max_file_size:
                                 continue
                             with BytesIO(content) as c:
                                 yield c, leaf.path, commit.hash

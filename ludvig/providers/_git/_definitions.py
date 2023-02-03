@@ -450,7 +450,7 @@ class GitRepository:
             )
 
     def get_tree(self, hash: str = None, offset: str = None):
-        content, obj_type = self.get_pack_object(hash, offset)
+        content, obj_type, _ = self.get_pack_object(hash, offset)
         if obj_type != GitObjectType.OBJ_TREE:
             raise Exception("requested tree object, got {}".format(obj_type.name))
         return self.__parse_tree(content)
@@ -459,12 +459,12 @@ class GitRepository:
         self, hash: str = None, offset: str = None, meta_data_only=False
     ):
         for pack in self.__packs:
-            found, obj_type, _ = pack.get_pack_object(
+            found, obj_type, size = pack.get_pack_object(
                 hash=hash, offset=offset, meta_data_only=meta_data_only
             )
             if found:
-                return found, obj_type
-        return None, GitObjectType.NOT_SUPPORTED
+                return found, obj_type, size
+        return None, GitObjectType.NOT_SUPPORTED, -1
 
     def walk_tree(self, tree: "GitTree", path_prefix=""):
         files = []
