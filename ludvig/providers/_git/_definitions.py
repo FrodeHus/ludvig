@@ -409,7 +409,9 @@ class GitRepository:
 
         if total_size > 100:
             logger.warn(
-                "Git index is larger than 100 (%dMB) - scanning may be slow", total_size
+                "Git index is larger than 100 (%dMB) - scanning may be slow [commits: %d]",
+                total_size,
+                len(self.commits),
             )
 
     def get_tree(self, hash: str = None, offset: str = None):
