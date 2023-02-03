@@ -28,7 +28,6 @@ ludvig fs scan --path /my_awesome_app -otable
 
 The general usage of the tool can be found by running `python -m ludvig --help`
 
-
 ### Adding your own rules
 
 Ludvig happily accepts YARA rules from anywhere you choose - the only requirement is that they are packaged up neatly in a `.tar.gz` format.
@@ -67,6 +66,30 @@ Command
 
 Arguments
     --path  [Required] : Path to scan.
+    --deobfuscated     : Returns any secrets found in plaintext. Default: False.
+    --max-file-size    : Max file size for scanning (in bytes).  Default: 10000.
+    --output-sarif     : Generates SARIF report if filename is specified.
+    --severity-level   : Set severity level for reporting.  Allowed values: CRITICAL, HIGH, LOW,
+                         MEDIUM, UNKNOWN.  Default: MEDIUM.
+```
+
+### Git repository scan
+
+Ludvig can scan the entire history of a Git repository - so, be prepared for a long scan.
+
+Scanning large repositories will be slow (unless someone can figure out a better way and submit a PR 😊 ).  
+But it will be able to recreate files that was deleted or modified and scan them.
+
+Scan a Git repository (or a path containing multiple repositories): `python -m ludvig git scan --path <path>`
+
+```text
+ludvig git scan --help
+
+Command
+    ludvig git scan : Scans the history of a Git repository.
+
+Arguments
+    --path  [Required] : Path to Git repository.
     --deobfuscated     : Returns any secrets found in plaintext. Default: False.
     --max-file-size    : Max file size for scanning (in bytes).  Default: 10000.
     --output-sarif     : Generates SARIF report if filename is specified.

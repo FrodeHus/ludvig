@@ -215,35 +215,6 @@ class GitPack:
                 commits.append(commit)
         return commits
 
-    def __get_ofs_delta(
-        self,
-        f: BufferedReader,
-        initial_offset: int,
-        offset: int,
-        delta_list: List[GitDelta] = [],
-    ):
-        """
-        Reads negative offset and finds the referred deltified object
-        """
-        f.seek(initial_offset - offset)
-        (obj_type, size) = self.__read_pack_object_header(f)
-        if obj_type == GitObjectType.NOT_SUPPORTED:
-            logger.warn(
-                "unexpected delta content found at offset %d", initial_offset - offset
-            )
-            return None
-        if obj_type != GitObjectType.OBJ_OFS_DELTA:
-            return self.get_pack_object(
-                offset=initial_offset - offset, delta_list=delta_list
-            )
-        delta_offset = self.__read_delta_offset(f)
-        content = self.__read_compressed_object(self.__fp, size)
-        delta_list.extend(self.__parse_delta_instructions(content))
-
-        return self.__get_ofs_delta(
-            f, initial_offset - offset, delta_offset, delta_list
-        )
-
     def __parse_delta_instructions(self, data):
         i, source_length = self.__msb_size(data)
         i, target_length = self.__msb_size(data, i)
@@ -459,11 +430,15 @@ class GitRepository:
         self, hash: str = None, offset: str = None, meta_data_only=False
     ):
         for pack in self.__packs:
-            found, obj_type, size = pack.get_pack_object(
-                hash=hash, offset=offset, meta_data_only=meta_data_only
-            )
-            if found:
-                return found, obj_type, size
+            try:
+                found, obj_type, size = pack.get_pack_object(
+                    hash=hash, offset=offset, meta_data_only=meta_data_only
+                )
+                if found:
+                    return found, obj_type, size
+            except TypeError as ex:
+                logger.debug("could not retrieve %s - not a valid object?", hash)
+                logger.debug(ex)
         return None, GitObjectType.NOT_SUPPORTED, -1
 
     def walk_tree(self, tree: "GitTree", path_prefix=""):
