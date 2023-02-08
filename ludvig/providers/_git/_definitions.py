@@ -171,6 +171,9 @@ class GitPack:
             if obj_type == GitObjectType.OBJ_BLOB:
                 yield obj["name"], offset
 
+    def object_exists(self, hash: str):
+        return len([obj for obj in self.idx["objects"] if obj["name"] == hash])
+
     def __search_tree(self, tree: "GitTree", match_hash: str):
         for leaf in tree.leafs:
             if leaf.hash == match_hash:
@@ -398,15 +401,14 @@ class GitRepository:
     def __init__(self, pack_files: List[str]) -> None:
         self.__packs: List[GitPack] = []
         self.commits = []
+        self.__entries = {}
         total_size = 0
         for pf in pack_files:
             total_size += os.stat(pf + ".pack").st_size / (1024 * 1024)
             idx = GitPackIndex(pf + ".idx")
-
             pack = GitPack(pf + ".pack", idx)
             self.commits.extend(pack.commits)
             self.__packs.append(pack)
-
         if total_size > 100:
             logger.warn(
                 "Git index is larger than 100 (%dMB) - scanning may be slow [commits: %d]",
@@ -414,12 +416,25 @@ class GitRepository:
                 len(self.commits),
             )
 
+    def object_exists(self, hash: str):
+        for pack in self.__packs:
+            if pack.object_exists(hash):
+                return True
+        return False
+
     def get_tree(self, hash: str = None, offset: str = None):
+        if hash and not self.object_exists(hash):
+            logger.warn("object %s was requested but not found in index - nuked?", hash)
+            return None
+
         content, obj_type, _ = self.get_pack_object(hash, offset)
         if obj_type != GitObjectType.OBJ_TREE:
-            raise Exception(
-                "requested tree object {}, got {}".format(hash or offset, obj_type.name)
+            logger.warn(
+                "tree object %s returned %s - nuked from history?",
+                hash or offset,
+                obj_type.name,
             )
+            return None
         return self.__parse_tree(content)
 
     def get_pack_object(

@@ -29,6 +29,7 @@ class GitRepositoryProvider(BaseFileProvider):
             with GitRepository(pack_files) as repo:
                 for commit in repo.commits:
                     try:
+
                         tree = repo.get_tree(hash=commit.tree_hash)
                         if not tree:
                             logger.warn("failed to read tree %s", commit.tree_hash)
