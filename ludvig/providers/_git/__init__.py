@@ -5,4 +5,5 @@ from ._definitions import (
     GitMainIndex,
     GitObjectType,
     GitRepository,
+    ObjectCache,
 )

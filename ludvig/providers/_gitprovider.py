@@ -1,8 +1,9 @@
 import glob
 from io import BytesIO
+import time
 from typing import List
 from ._providers import BaseFileProvider
-from ._git import GitRepository
+from ._git import GitRepository, ObjectCache
 import os
 from knack import log
 
@@ -26,15 +27,29 @@ class GitRepositoryProvider(BaseFileProvider):
             ):
                 pack_name = file[:-5]
                 pack_files.append(pack_name)
+            start_time = time.time()
+            time_total = 0
+            time_commit_avg = 0
             with GitRepository(pack_files) as repo:
-                for commit in repo.commits:
+                num_commits = len(repo.commits)
+                obj_cache = ObjectCache()
+                for idx, commit in enumerate(repo.commits, start=1):
+                    time_commit = time.time()
                     try:
-
+                        if time.time() - start_time > 60:
+                            logger.warn(
+                                "scanning is taking a long time... [status: %d / %d commits | %.2f commits/s | est. completed: %d min]",
+                                idx,
+                                num_commits,
+                                time_commit_avg,
+                                (((num_commits - idx) / time_commit_avg)) / 60,
+                            )
+                            start_time = time.time()
                         tree = repo.get_tree(hash=commit.tree_hash)
                         if not tree:
                             logger.warn("failed to read tree %s", commit.tree_hash)
                             continue
-                        for leaf in repo.walk_tree(tree):
+                        for leaf in repo.walk_tree(tree, obj_cache=obj_cache):
                             if self.is_excluded(leaf.path):
                                 continue
                             content, _, size = repo.get_pack_object(hash=leaf.hash)
@@ -42,6 +57,9 @@ class GitRepositoryProvider(BaseFileProvider):
                                 continue
                             with BytesIO(content) as c:
                                 yield c, leaf.path, commit.hash
+                        time_commit_scan = time.time() - time_commit
+                        time_total += time_commit_scan
+                        time_commit_avg = idx / time_total
                     except Exception as ex:
                         logger.error(ex)
                         continue

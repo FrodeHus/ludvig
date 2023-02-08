@@ -6,9 +6,9 @@ import os
 import struct
 from typing import List
 import zlib
-from knack import log
+from knack.log import get_logger
 
-logger = log.get_logger(__name__)
+logger = get_logger(__name__)
 
 byte_order_network = "!"
 byte_order_little_endian = "<"
@@ -208,8 +208,6 @@ class GitPack:
             if obj_type == GitObjectType.OBJ_COMMIT:
                 content = self.__read_compressed_object(self.__fp, size)
                 commit = self.__parse_commit_message(content, obj["name"])
-                if not self.object_exists(commit.tree_hash):
-                    continue
                 commits.append(commit)
         return commits
 
@@ -425,12 +423,9 @@ class GitRepository:
         return False
 
     def get_tree(self, hash: str = None, offset: str = None):
-        if hash and not self.object_exists(hash):
-            return None
-
         content, obj_type, _ = self.get_pack_object(hash, offset)
         if obj_type != GitObjectType.OBJ_TREE:
-            logger.warn(
+            logger.debug(
                 "tree object %s returned %s - nuked from history?",
                 hash or offset,
                 obj_type.name,
@@ -453,26 +448,36 @@ class GitRepository:
                 logger.debug(ex)
         return None, GitObjectType.NOT_SUPPORTED, -1
 
-    def walk_tree(self, tree: "GitTree", path_prefix=""):
+    def walk_tree(
+        self, tree: "GitTree", path_prefix="", obj_cache: "ObjectCache" = None
+    ):
         files = []
         if not hasattr(tree, "leafs"):
             logger.warn("tree has no leafs")
             return files
         for leaf in tree.leafs:
             if leaf.mode != 40000 and leaf.mode != 160000:
+                if obj_cache:
+                    modified = obj_cache.add(leaf, path_prefix)
+                    if modified:
+                        continue
                 leaf.path = os.path.join(path_prefix, leaf.path)
                 files.append(leaf)
             else:
                 next_tree = self.get_tree(hash=leaf.hash)
                 if not next_tree:
-                    logger.warn(
+                    logger.debug(
                         "tree %s [%s] was requested but not found in index - nuked?",
                         leaf.hash,
                         os.path.join(path_prefix, leaf.path),
                     )
                     continue
                 files.extend(
-                    self.walk_tree(next_tree, os.path.join(path_prefix, leaf.path))
+                    self.walk_tree(
+                        next_tree,
+                        os.path.join(path_prefix, leaf.path),
+                        obj_cache=obj_cache,
+                    )
                 )
         return files
 
@@ -563,3 +568,19 @@ class GitMainIndex(dict):
                 except Exception as ex:
                     logger.error(ex)
         return index
+
+
+class ObjectCache:
+    def __init__(self) -> None:
+        self.__cache = {}
+
+    def add(self, leaf: GitTreeItem, parent_path: str = None):
+        modified_hash = False
+        if parent_path:
+            path = os.path.join(parent_path, leaf.path)
+        else:
+            path = leaf.path
+        if path in self.__cache and self.__cache[path] != leaf.hash:
+            modified_hash = True
+        self.__cache[path] = leaf.hash
+        return modified_hash
