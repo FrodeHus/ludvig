@@ -84,6 +84,7 @@ class GitPackIndex(dict):
 
 class GitPack:
     def __init__(self, filename: str, idx: dict) -> None:
+        self.filename = filename
         self.__fp = open(filename, "rb")
         self.idx = idx
         self.commits = self.__get_all_commits()
@@ -147,21 +148,6 @@ class GitPack:
         else:
             assembled_object = self.__apply_delta_list(base_obj, delta_list)
             return assembled_object, obj_type
-
-    def walk_tree(self, tree: "GitTree", path_prefix=""):
-        files = []
-        for leaf in tree.leafs:
-            if leaf.mode != 40000 and leaf.mode != 160000:
-                leaf.path = os.path.join(path_prefix, leaf.path)
-                files.append(leaf)
-            else:
-                next_tree = self.get_pack_object(hash=leaf.hash)
-                if not next_tree:
-                    continue
-                files.extend(
-                    self.walk_tree(next_tree, os.path.join(path_prefix, leaf.path))
-                )
-        return files
 
     def get_all_blob_offsets(self):
         for obj in self.idx["objects"]:
@@ -403,6 +389,8 @@ class GitRepository:
         self.commits = []
         self.__entries = {}
         total_size = 0
+        self.__cache = {}
+
         for pf in pack_files:
             total_size += os.stat(pf + ".pack").st_size / (1024 * 1024)
             idx = GitPackIndex(pf + ".idx")
@@ -438,10 +426,17 @@ class GitRepository:
     ):
         for pack in self.__packs:
             try:
+                hash_key = hashlib.sha1(
+                    "|".join([str(hash or offset), pack.filename]).encode()
+                ).hexdigest()
+                if hash_key in self.__cache:
+                    return self.__cache[hash_key]
                 found, obj_type, size = pack.get_pack_object(
                     hash=hash, offset=offset, meta_data_only=meta_data_only
                 )
                 if found:
+                    if len(found) < 5000:
+                        self.__cache[hash_key] = (found, obj_type, size)
                     return found, obj_type, size
             except TypeError as ex:
                 logger.debug("could not retrieve %s - not a valid object?", hash)
