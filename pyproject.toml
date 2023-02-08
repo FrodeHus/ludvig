@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ludvig"
-version = "0.4.0"
+version = "0.5.0"
 authors = [{ name = "Frode Hus", email = "frode@frodehus.dev" }]
 description = "A simple vulnerability scanner"
 readme = "README.md"
@@ -39,7 +39,7 @@ line-length = 88
 target-version = ['py39']
 include = '\.pyi?$'
 [tool.bumpver]
-current_version = "0.4.0"
+current_version = "0.5.0"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
