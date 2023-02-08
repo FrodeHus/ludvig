@@ -89,6 +89,7 @@ class GitPack:
         self.idx = idx
         self.commits = self.__get_all_commits()
         self.entries = self.__read_git_pack()
+        self.__cache = {}
 
     def get_offset_by_hash(self, hash: str):
         return self.idx.get_offset(hash)
@@ -109,6 +110,11 @@ class GitPack:
             offset = self.get_offset_by_hash(hash)
         if not offset:
             return None
+
+        hash_key = hashlib.sha1(str(offset).encode()).hexdigest()
+        if hash_key in self.__cache:
+            return self.__cache[hash_key]
+
         self.__fp.seek(offset, 0)
         (obj_type, size) = self.__read_pack_object_header(self.__fp)
         if meta_data_only:
@@ -130,7 +136,8 @@ class GitPack:
             delta_offset = self.__read_delta_offset(self.__fp)
             content = self.__read_compressed_object(self.__fp, size)
             content, obj_type = self.__parse_delta(content, delta_offset, offset)
-
+        if len(content) < 10000:
+            self.__cache[hash_key] = (content, obj_type, len(content))
         return content, obj_type, len(content)
 
     def __parse_delta(self, delta_data, base_object_offset: int, current_offset: int):
@@ -389,7 +396,6 @@ class GitRepository:
         self.commits = []
         self.__entries = {}
         total_size = 0
-        self.__cache = {}
 
         for pf in pack_files:
             total_size += os.stat(pf + ".pack").st_size / (1024 * 1024)
@@ -426,17 +432,10 @@ class GitRepository:
     ):
         for pack in self.__packs:
             try:
-                hash_key = hashlib.sha1(
-                    "|".join([str(hash or offset), pack.filename]).encode()
-                ).hexdigest()
-                if hash_key in self.__cache:
-                    return self.__cache[hash_key]
                 found, obj_type, size = pack.get_pack_object(
                     hash=hash, offset=offset, meta_data_only=meta_data_only
                 )
                 if found:
-                    if len(found) < 5000:
-                        self.__cache[hash_key] = (found, obj_type, size)
                     return found, obj_type, size
             except TypeError as ex:
                 logger.debug("could not retrieve %s - not a valid object?", hash)
