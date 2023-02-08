@@ -208,6 +208,8 @@ class GitPack:
             if obj_type == GitObjectType.OBJ_COMMIT:
                 content = self.__read_compressed_object(self.__fp, size)
                 commit = self.__parse_commit_message(content, obj["name"])
+                if not self.object_exists(commit.tree_hash):
+                    continue
                 commits.append(commit)
         return commits
 
@@ -424,7 +426,6 @@ class GitRepository:
 
     def get_tree(self, hash: str = None, offset: str = None):
         if hash and not self.object_exists(hash):
-            logger.warn("object %s was requested but not found in index - nuked?", hash)
             return None
 
         content, obj_type, _ = self.get_pack_object(hash, offset)
@@ -464,6 +465,11 @@ class GitRepository:
             else:
                 next_tree = self.get_tree(hash=leaf.hash)
                 if not next_tree:
+                    logger.warn(
+                        "tree %s [%s] was requested but not found in index - nuked?",
+                        leaf.hash,
+                        os.path.join(path_prefix, leaf.path),
+                    )
                     continue
                 files.extend(
                     self.walk_tree(next_tree, os.path.join(path_prefix, leaf.path))
