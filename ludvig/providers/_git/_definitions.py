@@ -452,8 +452,8 @@ class GitRepository:
         for leaf in tree.leafs:
             if leaf.mode != 40000 and leaf.mode != 160000:
                 if obj_cache:
-                    modified = obj_cache.add(leaf, path_prefix)
-                    if not modified:
+                    added, modified = obj_cache.add(leaf, path_prefix)
+                    if not added and not modified:
                         continue
                 leaf.path = os.path.join(path_prefix, leaf.path)
                 files.append(leaf)
@@ -570,11 +570,15 @@ class ObjectCache:
 
     def add(self, leaf: GitTreeItem, parent_path: str = None):
         modified_hash = False
+        new = False
         if parent_path:
             path = os.path.join(parent_path, leaf.path)
         else:
             path = leaf.path
         if path in self.__cache and self.__cache[path] != leaf.hash:
+            new = False
             modified_hash = True
+        elif path not in self.__cache:
+            new = True
         self.__cache[path] = leaf.hash
-        return modified_hash
+        return new, modified_hash

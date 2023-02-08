@@ -12,10 +12,15 @@ logger = log.get_logger(__name__)
 
 class GitRepositoryProvider(BaseFileProvider):
     def __init__(
-        self, path: str, exclusions: List[str] = None, max_file_size=10000
+        self,
+        path: str,
+        commit: str = None,
+        exclusions: List[str] = None,
+        max_file_size=10000,
     ) -> None:
         super().__init__(exclusions=exclusions, max_file_size=max_file_size)
         self.path = path
+        self.commit = commit
 
     def get_files(self):
         repos = glob.iglob(os.path.join(self.path, "**/.git"), recursive=True)
@@ -31,9 +36,16 @@ class GitRepositoryProvider(BaseFileProvider):
             time_total = 0
             time_commit_avg = 0
             with GitRepository(pack_files) as repo:
-                num_commits = len(repo.commits)
+                if self.commit:
+                    commits = [
+                        commit for commit in repo.commits if commit.hash == self.commit
+                    ]
+                else:
+                    commits = repo.commits
+
+                num_commits = len(commits)
                 obj_cache = ObjectCache()
-                for idx, commit in enumerate(repo.commits, start=1):
+                for idx, commit in enumerate(commits, start=1):
                     time_commit = time.time()
                     try:
                         if time.time() - start_time > 300:
