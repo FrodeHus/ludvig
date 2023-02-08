@@ -454,7 +454,7 @@ class GitRepository:
             if leaf.mode != 40000 and leaf.mode != 160000:
                 if obj_cache:
                     modified = obj_cache.add(leaf, path_prefix)
-                    if modified:
+                    if not modified:
                         continue
                 leaf.path = os.path.join(path_prefix, leaf.path)
                 files.append(leaf)
