@@ -36,7 +36,7 @@ class GitRepositoryProvider(BaseFileProvider):
                 for idx, commit in enumerate(repo.commits, start=1):
                     time_commit = time.time()
                     try:
-                        if time.time() - start_time > 60:
+                        if time.time() - start_time > 300:
                             logger.warn(
                                 "scanning is taking a long time... [status: %d / %d commits | %.2f commits/s | est. completed: %d min]",
                                 idx,
