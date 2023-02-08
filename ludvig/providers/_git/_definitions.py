@@ -130,7 +130,7 @@ class GitPack:
             content = self.__read_compressed_object(self.__fp, size)
             content, obj_type = self.__parse_delta(content, delta_offset, offset)
 
-        return content, obj_type, size
+        return content, obj_type, len(content)
 
     def __parse_delta(self, delta_data, base_object_offset: int, current_offset: int):
         delta_list = self.__parse_delta_instructions(delta_data)
