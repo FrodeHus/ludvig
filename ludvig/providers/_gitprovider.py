@@ -3,7 +3,7 @@ from io import BytesIO
 import time
 from typing import List
 from ._providers import BaseFileProvider
-from ._git import GitRepository, ObjectCache
+from ._git import GitRepository, ObjectCache, GitObjectType
 import os
 from knack import log
 
@@ -15,12 +15,14 @@ class GitRepositoryProvider(BaseFileProvider):
         self,
         path: str,
         commit: str = None,
+        fast_scan=False,
         exclusions: List[str] = None,
         max_file_size=10000,
     ) -> None:
         super().__init__(exclusions=exclusions, max_file_size=max_file_size)
         self.path = path
         self.commit = commit
+        self.fast_scan = fast_scan
 
     def get_files(self):
         repos = glob.iglob(os.path.join(self.path, "**/.git"), recursive=True)
@@ -64,7 +66,12 @@ class GitRepositoryProvider(BaseFileProvider):
                         for leaf in repo.walk_tree(tree, obj_cache=obj_cache):
                             if self.is_excluded(leaf.path):
                                 continue
-                            content, _, size = repo.get_pack_object(hash=leaf.hash)
+                            content, _, size = repo.get_pack_object(
+                                hash=leaf.hash,
+                                expected_type=GitObjectType.OBJ_BLOB
+                                if self.fast_scan and leaf.is_regular_file()
+                                else None,
+                            )
                             if not content or size > self.max_file_size:
                                 continue
                             with BytesIO(content) as c:

@@ -120,6 +120,7 @@ class GitPack:
         hash: str = None,
         offset: int = None,
         meta_data_only=False,
+        expected_type: GitObjectType = None,
     ):
         if hash:
             offset = self.get_offset_by_hash(hash)
@@ -150,13 +151,25 @@ class GitPack:
         elif obj_type == GitObjectType.OBJ_OFS_DELTA:
             delta_offset = self.__read_delta_offset(self.__fp)
             content = self.__read_compressed_object(self.__fp, size)
-            content, obj_type = self.__parse_delta(content, delta_offset, offset)
+            content, obj_type = self.__parse_delta(
+                content, delta_offset, offset, expected_type=expected_type
+            )
         if len(content) < 10000:
             self.__cache[hash_key] = (content, obj_type, len(content))
         return content, obj_type, len(content)
 
-    def __parse_delta(self, delta_data, base_object_offset: int, current_offset: int):
+    def __parse_delta(
+        self,
+        delta_data,
+        base_object_offset: int,
+        current_offset: int,
+        expected_type: GitObjectType = None,
+    ):
         delta_list = self.__parse_delta_instructions(delta_data)
+        if expected_type == GitObjectType.OBJ_BLOB:
+            crude_delta = "".join([d.data for d in delta_list])
+            if len(crude_delta) > 0:
+                return crude_delta, expected_type
         base_obj, obj_type, size = self.get_pack_object(
             offset=current_offset - base_object_offset
         )
@@ -453,12 +466,19 @@ class GitRepository:
         return self.__parse_tree(content)
 
     def get_pack_object(
-        self, hash: str = None, offset: str = None, meta_data_only=False
+        self,
+        hash: str = None,
+        offset: str = None,
+        meta_data_only=False,
+        expected_type: GitObjectType = None,
     ):
         for pack in self.__packs:
             try:
                 found, obj_type, size = pack.get_pack_object(
-                    hash=hash, offset=offset, meta_data_only=meta_data_only
+                    hash=hash,
+                    offset=offset,
+                    meta_data_only=meta_data_only,
+                    expected_type=expected_type,
                 )
                 if found:
                     return found, obj_type, size
