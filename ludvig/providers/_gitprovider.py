@@ -35,13 +35,10 @@ class GitRepositoryProvider(BaseFileProvider):
                 for _, (loose_object, name, size) in enumerate(
                     repo.get_loose_objects()
                 ):
-                    # loose_object = test[0]
-                    # name = test[1]
-                    # size = test[2]
                     if not loose_object or size > self.max_file_size:
                         continue
                     with BytesIO(loose_object) as f:
-                        yield f, name, ""
+                        yield f, name, "<local loose object>"
 
                 if self.commit:
                     commits = [

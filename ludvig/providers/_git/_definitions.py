@@ -590,7 +590,10 @@ class GitMainIndex(dict):
             if os.path.exists(path):
                 with open(path, "rb") as f:
                     inflated = zlib.decompress(f.read())
-                    yield inflated, entry["name"], len(inflated)
+                    idx = inflated.find(b"\x00")
+                    type = inflated[:idx]
+                    content = inflated[idx + 1 :]
+                    yield content, entry["name"], len(inflated)
 
     def __read_git_main_index(self, index_path: str):
         # docs: https://git-scm.com/docs/index-format
