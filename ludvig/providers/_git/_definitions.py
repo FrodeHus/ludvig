@@ -1,5 +1,6 @@
 import binascii
 import enum
+import glob
 import hashlib
 from io import BufferedReader
 import os
@@ -13,7 +14,10 @@ logger = get_logger(__name__)
 byte_order_network = "!"
 byte_order_little_endian = "<"
 
-# handy docs: https://shafiul.github.io//gitbook/7_the_packfile.html, https://git-scm.com/docs/pack-format, https://codewords.recurse.com/issues/three/unpacking-git-packfiles
+# handy docs:
+# - https://shafiul.github.io//gitbook/7_the_packfile.html
+# - https://git-scm.com/docs/pack-format, https://codewords.recurse.com/issues/three/unpacking-git-packfiles
+# - https://alibaba-cloud.medium.com/a-detailed-explanation-of-the-underlying-data-structures-and-principles-of-git-19914c7906c2
 
 
 class GitObjectType(enum.Enum):
@@ -431,12 +435,14 @@ class GitCommit:
 
 
 class GitRepository:
-    def __init__(self, pack_files: List[str]) -> None:
+    def __init__(self, repo_path: str) -> None:
+        self.path = repo_path
         self.__packs: List[GitPack] = []
         self.commits = []
         self.__entries = {}
         total_size = 0
-
+        self.__loose_idx = GitMainIndex(os.path.join(self.path, "index"))
+        pack_files = self.__get_pack_files()
         for pf in pack_files:
             total_size += os.stat(pf + ".pack").st_size / (1024 * 1024)
             idx = GitPackIndex(pf + ".idx")
@@ -525,6 +531,19 @@ class GitRepository:
     def build_history(self):
         pass
 
+    def get_loose_objects(self):
+        return self.__loose_idx.get_files()
+
+    def __get_pack_files(self):
+        pack_path = os.path.join(self.path, "objects")
+        pack_files = []
+        for file in glob.iglob(
+            os.path.join(pack_path, "**/pack-*.pack"), recursive=True
+        ):
+            pack_name = file[:-5]
+            pack_files.append(pack_name)
+        return pack_files
+
     def __parse_tree(self, content) -> "GitTree":
         tree = []
         i = 0
@@ -561,6 +580,20 @@ class GitMainIndex(dict):
     def __init__(self, idx_file: str):
         idx = self.__read_git_main_index(idx_file)
         super().__init__(idx)
+        self.__base_path = os.path.abspath(idx_file[:-6])
+
+    def get_files(self):
+        for entry in self["entries"]:
+            path = os.path.join(
+                self.__base_path, "objects", entry["sha1"][:2], entry["sha1"][2:]
+            )
+            if os.path.exists(path):
+                with open(path, "rb") as f:
+                    inflated = zlib.decompress(f.read())
+                    idx = inflated.find(b"\x00")
+                    type = inflated[:idx]
+                    content = inflated[idx + 1 :]
+                    yield content, entry["name"], len(inflated)
 
     def __read_git_main_index(self, index_path: str):
         # docs: https://git-scm.com/docs/index-format

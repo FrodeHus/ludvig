@@ -27,17 +27,19 @@ class GitRepositoryProvider(BaseFileProvider):
     def get_files(self):
         repos = glob.iglob(os.path.join(self.path, "**/.git"), recursive=True)
         for repo in repos:
-            pack_path = os.path.join(repo, "objects")
-            pack_files = []
-            for file in glob.iglob(
-                os.path.join(pack_path, "**/pack-*.pack"), recursive=True
-            ):
-                pack_name = file[:-5]
-                pack_files.append(pack_name)
+
             start_time = time.time()
             time_total = 0
             time_commit_avg = 0
-            with GitRepository(pack_files) as repo:
+            with GitRepository(repo) as repo:
+                for _, (loose_object, name, size) in enumerate(
+                    repo.get_loose_objects()
+                ):
+                    if not loose_object or size > self.max_file_size:
+                        continue
+                    with BytesIO(loose_object) as f:
+                        yield f, name, "<local loose object>"
+
                 if self.commit:
                     commits = [
                         commit for commit in repo.commits if commit.hash == self.commit
