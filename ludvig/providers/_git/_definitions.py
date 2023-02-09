@@ -166,10 +166,12 @@ class GitPack:
         expected_type: GitObjectType = None,
     ):
         delta_list = self.__parse_delta_instructions(delta_data)
-        if expected_type == GitObjectType.OBJ_BLOB:
-            crude_delta = "".join([d.data for d in delta_list])
+        if expected_type == GitObjectType.OBJ_BLOB and len(delta_list) > 2:
+            crude_delta = "".join(
+                [d.data.decode("utf-8", errors="replace") for d in delta_list if d.data]
+            )
             if len(crude_delta) > 0:
-                return crude_delta, expected_type
+                return crude_delta.encode(), expected_type
         base_obj, obj_type, size = self.get_pack_object(
             offset=current_offset - base_object_offset
         )
