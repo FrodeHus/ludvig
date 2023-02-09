@@ -32,6 +32,17 @@ class GitRepositoryProvider(BaseFileProvider):
             time_total = 0
             time_commit_avg = 0
             with GitRepository(repo) as repo:
+                for _, (loose_object, name, size) in enumerate(
+                    repo.get_loose_objects()
+                ):
+                    # loose_object = test[0]
+                    # name = test[1]
+                    # size = test[2]
+                    if not loose_object or size > self.max_file_size:
+                        continue
+                    with BytesIO(loose_object) as f:
+                        yield f, name, ""
+
                 if self.commit:
                     commits = [
                         commit for commit in repo.commits if commit.hash == self.commit

@@ -531,6 +531,9 @@ class GitRepository:
     def build_history(self):
         pass
 
+    def get_loose_objects(self):
+        return self.__loose_idx.get_files()
+
     def __get_pack_files(self):
         pack_path = os.path.join(self.path, "objects")
         pack_files = []
@@ -577,6 +580,17 @@ class GitMainIndex(dict):
     def __init__(self, idx_file: str):
         idx = self.__read_git_main_index(idx_file)
         super().__init__(idx)
+        self.__base_path = os.path.abspath(idx_file[:-6])
+
+    def get_files(self):
+        for entry in self["entries"]:
+            path = os.path.join(
+                self.__base_path, "objects", entry["sha1"][:2], entry["sha1"][2:]
+            )
+            if os.path.exists(path):
+                with open(path, "rb") as f:
+                    inflated = zlib.decompress(f.read())
+                    yield inflated, entry["name"], len(inflated)
 
     def __read_git_main_index(self, index_path: str):
         # docs: https://git-scm.com/docs/index-format
