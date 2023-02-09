@@ -54,10 +54,25 @@ class GitPackIndex(dict):
         super().__init__(idx)
 
     def get_offset(self, object_hash: str):
-        object = [o for o in self["objects"] if o["name"] == object_hash]
-        if len(object) > 0:
-            return object[0]["offset"]
+        t = self.__find_index(self["objects"], object_hash)
+        obj = self["objects"][t]
+        if obj:
+            return obj["offset"]
         return None
+
+    def __find_index(self, elements: dict, value):
+        value = int("0x" + value, 0)
+        left, right = 0, len(elements) - 1
+        while left <= right:
+            middle = (left + right) // 2
+            middle_element = int("0x" + elements[middle]["name"], 0)
+            if middle_element == value:
+                return middle
+
+            if middle_element < value:
+                left = middle + 1
+            elif middle_element > value:
+                right = middle - 1
 
     def __read(self, filename: str):
         idx = {}
@@ -474,6 +489,9 @@ class GitRepository:
                     )
                 )
         return files
+
+    def build_history(self):
+        pass
 
     def __parse_tree(self, content) -> "GitTree":
         tree = []
