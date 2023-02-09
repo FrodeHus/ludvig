@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ludvig"
-version = "0.5.6"
+version = "0.5.7"
 authors = [{ name = "Frode Hus", email = "frode@frodehus.dev" }]
 description = "A simple vulnerability scanner"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -39,7 +39,7 @@ line-length = 88
 target-version = ['py39']
 include = '\.pyi?$'
 [tool.bumpver]
-current_version = "0.5.6"
+current_version = "0.5.7"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true

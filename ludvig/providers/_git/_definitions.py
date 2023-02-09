@@ -119,7 +119,7 @@ class GitPack:
             return commit[0]
         return None
 
-    def get_pack_object(
+    def get_object(
         self,
         hash: str = None,
         offset: int = None,
@@ -143,18 +143,18 @@ class GitPack:
         if obj_type == GitObjectType.NOT_SUPPORTED:
             return
         if obj_type == GitObjectType.OBJ_COMMIT:
-            content = self.__read_compressed_object(self.__fp, size)
-            return self.__parse_commit_message(content, hash)
+            content = read_compressed_object(self.__fp, size)
+            return parse_commit_message(content, hash)
         elif obj_type == GitObjectType.OBJ_BLOB:
-            content = self.__read_compressed_object(self.__fp, size)
+            content = read_compressed_object(self.__fp, size)
         elif obj_type == GitObjectType.OBJ_TREE:
-            content = self.__read_compressed_object(self.__fp, size)
+            content = read_compressed_object(self.__fp, size)
         elif obj_type == GitObjectType.OBJ_REF_DELTA:
             object_name = binascii.hexlify(self.__fp.read(20)).decode("ascii")
-            content = self.get_pack_object(hash=object_name)
+            content = self.get_object(hash=object_name)
         elif obj_type == GitObjectType.OBJ_OFS_DELTA:
             delta_offset = self.__read_delta_offset(self.__fp)
-            content = self.__read_compressed_object(self.__fp, size)
+            content = read_compressed_object(self.__fp, size)
             content, obj_type = self.__parse_delta(
                 content, delta_offset, offset, expected_type=expected_type
             )
@@ -176,13 +176,13 @@ class GitPack:
             )
             if len(crude_delta) > 0:
                 return crude_delta.encode(), expected_type
-        base_obj, obj_type, size = self.get_pack_object(
+        base_obj, obj_type, size = self.get_object(
             offset=current_offset - base_object_offset
         )
 
         if obj_type == GitObjectType.OBJ_OFS_DELTA:
             delta_offset = self.__read_delta_offset(self.__fp)
-            content = self.__read_compressed_object(self.__fp, size)
+            content = read_compressed_object(self.__fp, size)
             return self.__parse_delta(
                 content, delta_offset, current_offset - base_object_offset
             )
@@ -192,7 +192,7 @@ class GitPack:
 
     def get_all_blob_offsets(self):
         for obj in self.idx["objects"]:
-            (offset, obj_type, _) = self.get_pack_object(
+            (offset, obj_type, _) = self.get_object(
                 hash=obj["name"], meta_data_only=True
             )
             if obj_type == GitObjectType.OBJ_BLOB:
@@ -206,7 +206,7 @@ class GitPack:
             if leaf.hash == match_hash:
                 return leaf
             if leaf.mode == 40000 or leaf.mode == 160000:
-                tree = self.get_pack_object(hash=leaf.hash)
+                tree = self.get_object(hash=leaf.hash)
                 return self.__search_tree(tree, match_hash)
         return None
 
@@ -233,8 +233,8 @@ class GitPack:
             self.__fp.seek(obj["offset"])
             (obj_type, size) = self.__read_pack_object_header(self.__fp)
             if obj_type == GitObjectType.OBJ_COMMIT:
-                content = self.__read_compressed_object(self.__fp, size)
-                commit = self.__parse_commit_message(content, obj["name"])
+                content = read_compressed_object(self.__fp, size)
+                commit = parse_commit_message(content, obj["name"])
                 commits.append(commit)
         return commits
 
@@ -301,33 +301,6 @@ class GitPack:
             if not c & 0x80:
                 break
         return i + offset, size
-
-    def __parse_commit_message(self, data, hash: str = None):
-        info = {"hash": hash}
-        msg = data.decode("utf-8").split("\n")
-        for i, line in enumerate(msg):
-            if line.startswith("tree"):
-                info["tree"] = line.split()[1]
-            elif line.startswith("parent"):
-                info["parent"] = line.split()[1]
-            elif line.startswith("author"):
-                info["author"] = " ".join(line.split()[1:-2])
-            elif line.startswith("committer"):
-                info["comitter"] = " ".join(line.split()[1:-2])
-        return GitCommit(
-            info["parent"] if "parent" in info else None,
-            info["tree"],
-            info["author"],
-            info["comitter"],
-            info["hash"],
-        )
-
-    def __read_compressed_object(self, f: BufferedReader, size: int):
-        try:
-            content = zlib.decompress(f.read(size))
-            return content
-        except:
-            return None
 
     def __read_pack_object_header(self, f: BufferedReader):
         byte0 = read(f, "B")
@@ -441,7 +414,16 @@ class GitRepository:
         self.commits = []
         self.__entries = {}
         total_size = 0
-        self.__loose_idx = GitMainIndex(os.path.join(self.path, "index"))
+        with open(os.path.join(self.path, "HEAD"), "r") as f:
+            self.__head = f.read()
+            self.__head = self.__head.split()[1]
+        refs = self.__read_refs()
+        self.__ref_sha = refs[self.__head]
+        current_commit, type = self.__get_local_object(self.__ref_sha)
+        if type == GitObjectType.OBJ_COMMIT:
+            self.commits.append(current_commit)
+        else:
+            logger.error("expected HEAD to point to a commit object, not %s", type.name)
         pack_files = self.__get_pack_files()
         for pf in pack_files:
             total_size += os.stat(pf + ".pack").st_size / (1024 * 1024)
@@ -463,7 +445,11 @@ class GitRepository:
         return False
 
     def get_tree(self, hash: str = None, offset: str = None):
-        content, obj_type, _ = self.get_pack_object(hash, offset)
+        local_tree, _ = self.__get_local_object(hash)
+        if local_tree:
+            return local_tree
+
+        content, obj_type, _ = self.get_object(hash, offset)
         if obj_type != GitObjectType.OBJ_TREE:
             logger.debug(
                 "tree object %s returned %s - nuked from history?",
@@ -471,18 +457,22 @@ class GitRepository:
                 obj_type.name,
             )
             return None
-        return self.__parse_tree(content)
+        return parse_tree(content)
 
-    def get_pack_object(
+    def get_object(
         self,
         hash: str = None,
         offset: str = None,
         meta_data_only=False,
         expected_type: GitObjectType = None,
     ):
+        local_obj, obj_type = self.__get_local_object(hash)
+        if local_obj:
+            return local_obj, obj_type, len(local_obj)
+
         for pack in self.__packs:
             try:
-                found, obj_type, size = pack.get_pack_object(
+                found, obj_type, size = pack.get_object(
                     hash=hash,
                     offset=offset,
                     meta_data_only=meta_data_only,
@@ -531,8 +521,50 @@ class GitRepository:
     def build_history(self):
         pass
 
-    def get_loose_objects(self):
-        return self.__loose_idx.get_files()
+    def __get_local_object(self, hash: str):
+        obj_path = os.path.join(self.path, "objects", hash[:2], hash[2:])
+        if not os.path.exists(obj_path):
+            return None, None
+
+        with open(obj_path, "rb") as f:
+            inflated = zlib.decompress(f.read())
+
+        start = inflated.find(b"\x00") + 1
+        type = inflated[:start].split()[0].decode("utf-8")
+        data = inflated[start:]
+        if type == "commit":
+            type = GitObjectType.OBJ_COMMIT
+            parsed = parse_commit_message(data, hash)
+        elif type == "tree":
+            type = GitObjectType.OBJ_TREE
+            parsed = parse_tree(data)
+        elif type == "blob":
+            type = GitObjectType.OBJ_BLOB
+            parsed = data
+        else:
+            type = GitObjectType.NOT_SUPPORTED
+            parsed = data
+
+        return parsed, type
+
+    def __read_refs(self):
+        refs = {}
+        info_refs = os.path.join(self.path, "info", "refs")
+        if os.path.exists(info_refs):
+            with open(info_refs) as f:
+                ref_data = f.read()
+            for line in ref_data.splitlines():
+                l = line.split("\t")
+                ref = l[1]
+                sha = l[0]
+                refs[ref] = sha
+
+        head_refs = os.path.join(self.path, "refs", "heads")
+        if os.path.exists(head_refs):
+            for file in os.listdir(head_refs):
+                with open(os.path.join(head_refs, file)) as f:
+                    refs[os.path.join("refs", "heads", file)] = f.read().rstrip("\n")
+        return refs
 
     def __get_pack_files(self):
         pack_path = os.path.join(self.path, "objects")
@@ -543,30 +575,6 @@ class GitRepository:
             pack_name = file[:-5]
             pack_files.append(pack_name)
         return pack_files
-
-    def __parse_tree(self, content) -> "GitTree":
-        tree = []
-        i = 0
-        while i < len(content):
-            try:
-                x = content.find(b" ", i)
-                if x == -1:
-                    i += 1
-                    continue
-                mode = int(content[i:x], 8)
-                i = x + 1
-                x = content.find(b"\x00", x)
-                path = content[i:x].decode("utf-8")
-                i += (x - i) + 1
-                x = i + 20
-                sha = binascii.hexlify(content[i:x]).decode("ascii")
-                i = x
-                tree_item = GitTreeItem(path, mode, sha)
-                tree.append(tree_item)
-            except Exception as ex:
-                logger.warn("failed to parse git tree: %s", ex)
-                return None
-        return GitTree(tree)
 
     def __enter__(self):
         return self
@@ -580,12 +588,6 @@ class GitMainIndex(dict):
     def __init__(self, idx_file: str):
         idx = self.__read_git_main_index(idx_file)
         super().__init__(idx)
-        self.__base_path = os.path.abspath(idx_file[:-6])
-        with open(os.path.join(self.__base_path, "HEAD"), "r") as f:
-            self.__head = f.read()
-            self.__head = self.__head.split()[1]
-        refs = self.__read_refs()
-        self.__ref_sha = refs[self.__head]
 
     def get_files(self):
         for entry in self["entries"]:
@@ -599,17 +601,6 @@ class GitMainIndex(dict):
                     type = inflated[:idx]
                     content = inflated[idx + 1 :]
                     yield content, entry["name"], entry["sha1"], self.__ref_sha
-
-    def __read_refs(self):
-        refs = {}
-        with open(os.path.join(self.__base_path, "info", "refs")) as f:
-            ref_data = f.read()
-        for line in ref_data.splitlines():
-            l = line.split("\t")
-            ref = l[1]
-            sha = l[0]
-            refs[ref] = sha
-        return refs
 
     def __read_git_main_index(self, index_path: str):
         # docs: https://git-scm.com/docs/index-format
@@ -681,3 +672,62 @@ class ObjectCache:
             new = True
         self.__cache[path] = leaf.hash
         return new, modified_hash
+
+
+def read_commit(data: BufferedReader, hash: str = None):
+    inflated = read_compressed_object(data)
+    return parse_commit_message(inflated)
+
+
+def parse_commit_message(data, hash: str = None):
+    info = {"hash": hash}
+    msg = data.decode("utf-8").split("\n")
+    for i, line in enumerate(msg):
+        if line.startswith("tree"):
+            info["tree"] = line.split()[1]
+        elif line.startswith("parent"):
+            info["parent"] = line.split()[1]
+        elif line.startswith("author"):
+            info["author"] = " ".join(line.split()[1:-2])
+        elif line.startswith("committer"):
+            info["comitter"] = " ".join(line.split()[1:-2])
+    return GitCommit(
+        info["parent"] if "parent" in info else None,
+        info["tree"],
+        info["author"],
+        info["comitter"],
+        info["hash"],
+    )
+
+
+def read_compressed_object(f: BufferedReader, size: int):
+    try:
+        content = zlib.decompress(f.read(size))
+        return content
+    except:
+        return None
+
+
+def parse_tree(content) -> GitTree:
+    tree = []
+    i = 0
+    while i < len(content):
+        try:
+            x = content.find(b" ", i)
+            if x == -1:
+                i += 1
+                continue
+            mode = int(content[i:x], 8)
+            i = x + 1
+            x = content.find(b"\x00", x)
+            path = content[i:x].decode("utf-8")
+            i += (x - i) + 1
+            x = i + 20
+            sha = binascii.hexlify(content[i:x]).decode("ascii")
+            i = x
+            tree_item = GitTreeItem(path, mode, sha)
+            tree.append(tree_item)
+        except Exception as ex:
+            logger.warn("failed to parse git tree: %s", ex)
+            return None
+    return GitTree(tree)

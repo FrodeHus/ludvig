@@ -38,16 +38,6 @@ class GitRepositoryProvider(BaseFileProvider):
                     ]
                 else:
                     commits = repo.commits
-                    for _, (loose_object, name, sha1, ref_sha) in enumerate(
-                        repo.get_loose_objects()
-                    ):
-                        if not loose_object or len(loose_object) > self.max_file_size:
-                            continue
-                        with BytesIO(loose_object) as f:
-                            yield f, name, {
-                                "file_hash": sha1,
-                                "commit_hash": ref_sha,
-                            }
 
                 num_commits = len(commits)
                 obj_cache = ObjectCache()
@@ -70,7 +60,7 @@ class GitRepositoryProvider(BaseFileProvider):
                         for leaf in repo.walk_tree(tree, obj_cache=obj_cache):
                             if self.is_excluded(leaf.path):
                                 continue
-                            content, _, size = repo.get_pack_object(
+                            content, _, size = repo.get_object(
                                 hash=leaf.hash,
                                 expected_type=GitObjectType.OBJ_BLOB
                                 if self.fast_scan and leaf.is_regular_file()
