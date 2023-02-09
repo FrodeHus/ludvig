@@ -20,6 +20,7 @@ def transform_finding_list(result):
 def transform_git_finding_list(result):
     transformed = []
     for r in result:
+
         res = OrderedDict(
             [
                 ("RuleId", r["match"]["id"]),
@@ -27,7 +28,8 @@ def transform_git_finding_list(result):
                 ("Severity", r["severity"]),
                 ("Filename", r["filename"]),
                 ("LineNumber", r["samples"][0]["lineNumber"]),
-                ("Commit SHA", r["properties"]["meta"]),
+                ("File SHA", r["properties"]["file_hash"]),
+                ("Commit SHA", r["properties"]["commit_hash"]),
             ]
         )
         transformed.append(res)

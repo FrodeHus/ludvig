@@ -581,6 +581,13 @@ class GitMainIndex(dict):
         idx = self.__read_git_main_index(idx_file)
         super().__init__(idx)
         self.__base_path = os.path.abspath(idx_file[:-6])
+        with open(os.path.join(self.__base_path, "HEAD"), "r") as f:
+            self.__head = f.read()
+            self.__head = os.path.join(
+                self.__base_path, self.__head[self.__head.find(":") + 2 : -1]
+            )
+        with open(self.__head) as f:
+            self.__ref_sha = f.read()
 
     def get_files(self):
         for entry in self["entries"]:
@@ -593,7 +600,7 @@ class GitMainIndex(dict):
                     idx = inflated.find(b"\x00")
                     type = inflated[:idx]
                     content = inflated[idx + 1 :]
-                    yield content, entry["name"], len(inflated)
+                    yield content, entry["name"], entry["sha1"], self.__ref_sha
 
     def __read_git_main_index(self, index_path: str):
         # docs: https://git-scm.com/docs/index-format

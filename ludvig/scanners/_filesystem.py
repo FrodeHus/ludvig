@@ -18,6 +18,6 @@ class FilesystemScanner(BaseScanner):
         self.findings: List[Finding] = []
 
     def scan(self):
-        for file_data, filename, extra in self.provider.get_files():
-            findings = self.scan_file_data(file_data, filename, meta=extra)
+        for file_data, filename, properties in self.provider.get_files():
+            findings = self.scan_file_data(file_data, filename, **properties)
             self.register_findings(findings)
