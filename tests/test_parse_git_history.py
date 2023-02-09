@@ -55,3 +55,8 @@ class TestParseGitHistory(TestCase):
                 """{\n\t"title": "yaay a title",\n\t"pat": "ghp_123abc1234567890abcdefjiklmnopqrstuv",\n\t"server_access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2R1bW15LnN0dWZmLmNvbS8iLCJpYXQiOjE1MTYyMzkwMjIsIm5iZiI6MTY3MzAzMjExNywiZXhwIjoxNjczMDM2NDIwLCJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.-cDdFD5abX_VeowZzLSoEL4rEbiVlJYOd01Zhg5Ntrk"\n}\n""",
                 content.decode("utf-8"),
             )
+
+    def test_build_history(self):
+        pack_file = os.path.join(os.path.dirname(__file__), "fixtures/pack")
+        with GitRepository([pack_file]) as p:
+            history = p.build_history()

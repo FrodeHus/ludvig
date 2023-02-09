@@ -54,10 +54,25 @@ class GitPackIndex(dict):
         super().__init__(idx)
 
     def get_offset(self, object_hash: str):
-        object = [o for o in self["objects"] if o["name"] == object_hash]
-        if len(object) > 0:
-            return object[0]["offset"]
+        t = self.__find_index(self["objects"], object_hash)
+        obj = self["objects"][t]
+        if obj:
+            return obj["offset"]
         return None
+
+    def __find_index(self, elements: dict, value):
+        value = int("0x" + value, 0)
+        left, right = 0, len(elements) - 1
+        while left <= right:
+            middle = (left + right) // 2
+            middle_element = int("0x" + elements[middle]["name"], 0)
+            if middle_element == value:
+                return middle
+
+            if middle_element < value:
+                left = middle + 1
+            elif middle_element > value:
+                right = middle - 1
 
     def __read(self, filename: str):
         idx = {}
@@ -105,6 +120,7 @@ class GitPack:
         hash: str = None,
         offset: int = None,
         meta_data_only=False,
+        expected_type: GitObjectType = None,
     ):
         if hash:
             offset = self.get_offset_by_hash(hash)
@@ -135,13 +151,25 @@ class GitPack:
         elif obj_type == GitObjectType.OBJ_OFS_DELTA:
             delta_offset = self.__read_delta_offset(self.__fp)
             content = self.__read_compressed_object(self.__fp, size)
-            content, obj_type = self.__parse_delta(content, delta_offset, offset)
+            content, obj_type = self.__parse_delta(
+                content, delta_offset, offset, expected_type=expected_type
+            )
         if len(content) < 10000:
             self.__cache[hash_key] = (content, obj_type, len(content))
         return content, obj_type, len(content)
 
-    def __parse_delta(self, delta_data, base_object_offset: int, current_offset: int):
+    def __parse_delta(
+        self,
+        delta_data,
+        base_object_offset: int,
+        current_offset: int,
+        expected_type: GitObjectType = None,
+    ):
         delta_list = self.__parse_delta_instructions(delta_data)
+        if expected_type == GitObjectType.OBJ_BLOB:
+            crude_delta = "".join([d.data for d in delta_list])
+            if len(crude_delta) > 0:
+                return crude_delta, expected_type
         base_obj, obj_type, size = self.get_pack_object(
             offset=current_offset - base_object_offset
         )
@@ -368,6 +396,16 @@ class GitTreeItem:
         self.mode = mode
         self.hash = hash
 
+    def is_regular_file(self):
+        if self.mode & 0x8000:
+            return True
+        return False
+
+    def is_directory(self):
+        if self.mode & 0x4000:
+            return True
+        return False
+
 
 class GitTree:
     def __init__(self, items=List[GitTreeItem]) -> None:
@@ -428,12 +466,19 @@ class GitRepository:
         return self.__parse_tree(content)
 
     def get_pack_object(
-        self, hash: str = None, offset: str = None, meta_data_only=False
+        self,
+        hash: str = None,
+        offset: str = None,
+        meta_data_only=False,
+        expected_type: GitObjectType = None,
     ):
         for pack in self.__packs:
             try:
                 found, obj_type, size = pack.get_pack_object(
-                    hash=hash, offset=offset, meta_data_only=meta_data_only
+                    hash=hash,
+                    offset=offset,
+                    meta_data_only=meta_data_only,
+                    expected_type=expected_type,
                 )
                 if found:
                     return found, obj_type, size
@@ -450,7 +495,7 @@ class GitRepository:
             logger.warn("tree has no leafs")
             return files
         for leaf in tree.leafs:
-            if leaf.mode != 40000 and leaf.mode != 160000:
+            if leaf.is_regular_file():
                 if obj_cache:
                     added, modified = obj_cache.add(leaf, path_prefix)
                     if not added and not modified:
@@ -475,6 +520,9 @@ class GitRepository:
                 )
         return files
 
+    def build_history(self):
+        pass
+
     def __parse_tree(self, content) -> "GitTree":
         tree = []
         i = 0
@@ -484,7 +532,7 @@ class GitRepository:
                 if x == -1:
                     i += 1
                     continue
-                mode = int(content[i:x])
+                mode = int(content[i:x], 8)
                 i = x + 1
                 x = content.find(b"\x00", x)
                 path = content[i:x].decode("utf-8")
