@@ -602,13 +602,21 @@ class GitMainIndex(dict):
 
     def __read_refs(self):
         refs = {}
-        with open(os.path.join(self.__base_path, "info", "refs")) as f:
-            ref_data = f.read()
-        for line in ref_data.splitlines():
-            l = line.split("\t")
-            ref = l[1]
-            sha = l[0]
-            refs[ref] = sha
+        head_refs = os.path.join(self.__base_path, "refs", "heads")
+        if os.path.exists(head_refs):
+            for file in os.listdir(head_refs):
+                with open(os.path.join(head_refs, file)) as f:
+                    refs[os.path.join("refs", "heads", file)] = f.read()
+
+        info_refs = os.path.join(self.__base_path, "info", "refs")
+        if os.path.exists(info_refs):
+            with open(info_refs) as f:
+                ref_data = f.read()
+            for line in ref_data.splitlines():
+                l = line.split("\t")
+                ref = l[1]
+                sha = l[0]
+                refs[ref] = sha
         return refs
 
     def __read_git_main_index(self, index_path: str):
