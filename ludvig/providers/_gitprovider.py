@@ -27,17 +27,11 @@ class GitRepositoryProvider(BaseFileProvider):
     def get_files(self):
         repos = glob.iglob(os.path.join(self.path, "**/.git"), recursive=True)
         for repo in repos:
-            pack_path = os.path.join(repo, "objects")
-            pack_files = []
-            for file in glob.iglob(
-                os.path.join(pack_path, "**/pack-*.pack"), recursive=True
-            ):
-                pack_name = file[:-5]
-                pack_files.append(pack_name)
+
             start_time = time.time()
             time_total = 0
             time_commit_avg = 0
-            with GitRepository(pack_files) as repo:
+            with GitRepository(repo) as repo:
                 if self.commit:
                     commits = [
                         commit for commit in repo.commits if commit.hash == self.commit
