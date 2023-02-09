@@ -32,20 +32,22 @@ class GitRepositoryProvider(BaseFileProvider):
             time_total = 0
             time_commit_avg = 0
             with GitRepository(repo) as repo:
-                for _, (loose_object, name, size) in enumerate(
-                    repo.get_loose_objects()
-                ):
-                    if not loose_object or size > self.max_file_size:
-                        continue
-                    with BytesIO(loose_object) as f:
-                        yield f, name, "<local loose object>"
-
                 if self.commit:
                     commits = [
                         commit for commit in repo.commits if commit.hash == self.commit
                     ]
                 else:
                     commits = repo.commits
+                    for _, (loose_object, name, sha1, ref_sha) in enumerate(
+                        repo.get_loose_objects()
+                    ):
+                        if not loose_object or len(loose_object) > self.max_file_size:
+                            continue
+                        with BytesIO(loose_object) as f:
+                            yield f, name, {
+                                "file_hash": sha1,
+                                "commit_hash": ref_sha,
+                            }
 
                 num_commits = len(commits)
                 obj_cache = ObjectCache()
@@ -77,7 +79,10 @@ class GitRepositoryProvider(BaseFileProvider):
                             if not content or size > self.max_file_size:
                                 continue
                             with BytesIO(content) as c:
-                                yield c, leaf.path, commit.hash
+                                yield c, leaf.path, {
+                                    "file_hash": leaf.hash,
+                                    "commit_hash": commit.hash,
+                                }
                         time_commit_scan = time.time() - time_commit
                         time_total += time_commit_scan
                         time_commit_avg = idx / time_total
