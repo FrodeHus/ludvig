@@ -1,6 +1,6 @@
 from types import MappingProxyType
 from typing import List
-from ludvig.types import Finding, FindingSample, RuleMatch, Severity, YaraRuleMatch
+from ludvig.types import Finding, RuleMatch
 import sarif_om as sarif
 from jschema_to_python.to_json import to_json
 
