@@ -14,6 +14,26 @@ Mostly because I thought it was a fun way to use YARA rules for something in add
 Anyway! Ludvig can, by means of Yara, detect secrets and what-nots in binaries as well as text files.  
 Is it not that we are most worried about? Our secrets leaking into our artifacts that are pushed onto the world?
 
+### Sample output
+
+```
+ludvig git scan --path . -otable
+RuleId    Name              Severity    Filename                         LineNumber    File SHA                                  Commit SHA
+--------  ----------------  ----------  -------------------------------  ------------  ----------------------------------------  ----------------------------------------
+LS0009    PrivateKey        CRITICAL    samples/container/key.pem        1             96dd292cecfcee5a0494f1b706e2a86850780882  cc2335ba01a310ad57faa13d8d443c463d77c6e8
+LS0008    JwtToken          HIGH        samples/container/secrets.json   5             9f91a973d12960664a30a3fdd26f44503f4a79a4  cc2335ba01a310ad57faa13d8d443c463d77c6e8
+LS0014    SendgridApiToken  HIGH        samples/container/secrets.json   6             9f91a973d12960664a30a3fdd26f44503f4a79a4  cc2335ba01a310ad57faa13d8d443c463d77c6e8
+LS0006    GitHubToken       CRITICAL    samples/container/secrets.json   4             9f91a973d12960664a30a3fdd26f44503f4a79a4  cc2335ba01a310ad57faa13d8d443c463d77c6e8
+LS0012    PostmanApiToken   HIGH        samples/dotnet/Program.cs        8             5692ab984fa2d222d2176023e144ab8902f02060  cc2335ba01a310ad57faa13d8d443c463d77c6e8
+LS0008    JwtToken          HIGH        tests/test_parse_git_history.py  55            39977c862e9df820069f626042acdd6a269cb745  cc2335ba01a310ad57faa13d8d443c463d77c6e8
+LS0006    GitHubToken       CRITICAL    tests/test_parse_git_history.py  55            39977c862e9df820069f626042acdd6a269cb745  cc2335ba01a310ad57faa13d8d443c463d77c6e8
+LS0009    PrivateKey        CRITICAL    samples/key.pem                  1             96dd292cecfcee5a0494f1b706e2a86850780882  031a637deff2644d116725fc817fe5af2d8ef9e6
+LS0008    JwtToken          HIGH        samples/secrets.json             5             2931459907d1d40770e5e04cbfd35d8f61c612e1  031a637deff2644d116725fc817fe5af2d8ef9e6
+LS0006    GitHubToken       CRITICAL    samples/secrets.json             4             2931459907d1d40770e5e04cbfd35d8f61c612e1  031a637deff2644d116725fc817fe5af2d8ef9e6
+LS0006    GitHubToken       CRITICAL    samples/dotnet/Program.cs        8             bce506eb35a0c46d0561068e1f451ba7c3048915  0f6b3467c3418655bdf04993f89520431db6f105
+LS0006    GitHubToken       CRITICAL    samples/secrets.json             3             f1b02a607c5ef97d66276fad99f9f0d1681944f8  2388bbe1376f05daa770f4cd75ce1dbd6a270279
+```
+
 ## Installation
 
 Either clone this repository or install using `python -m pip install ludvig`
