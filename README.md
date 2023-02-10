@@ -1,6 +1,6 @@
 # Ludvig security scanner
 
-[![Ludvig scan](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml/badge.svg)](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml)
+[![Ludvig scan](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml/badge.svg)](https://github.com/FrodeHus/ludvig/actions/workflows/main.yml)  [![Python Build](https://github.com/FrodeHus/ludvig/actions/workflows/python-build.yml/badge.svg)](https://github.com/FrodeHus/ludvig/actions/workflows/python-build.yml)
 
 > Want to use Ludvig with your CI pipeline? Mosey on over to the [Ludvig Action](https://github.com/marketplace/actions/ludvig-security-scanner) :)  
 > Or contribute to Ludvig's [YARA rules](https://github.com/frodehus/ludvig-rules)?
