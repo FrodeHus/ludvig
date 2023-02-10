@@ -7,3 +7,13 @@ from ._osv import (
     OSVReference,
     OSVSeverity,
 )
+
+__all__ = [
+    "OSVulnerability",
+    "OSVEvent",
+    "OSVAffected",
+    "OSVPackage",
+    "OSVRange",
+    "OSVReference",
+    "OSVSeverity",
+]
