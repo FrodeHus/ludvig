@@ -46,13 +46,23 @@ class OSVPackage:
 
 
 class OSVAffected:
-    def __init__(self, package: OSVPackage, versions: List[str]) -> None:
-        self.package = package
+    def __init__(
+        self, package: OSVPackage, ranges: List[OSVRange], versions: List[str] = None
+    ) -> None:
+        self.package: OSVPackage = package
+        self.ranges: List[OSVRange] = ranges
         self.versions: List[str] = versions
 
 
-class OpenSourceVulnerability:
-    def __init__(self, id: str, modified: str, schema_version="1.3.0") -> None:
+class OSVulnerability:
+    def __init__(
+        self,
+        id: str,
+        modified: str,
+        severity: List[OSVSeverity],
+        affected: List[OSVAffected],
+        schema_version="1.3.0",
+    ) -> None:
         self.schema_version: str = schema_version
         self.id: str = id
         self.modified: str = modified
@@ -62,7 +72,7 @@ class OpenSourceVulnerability:
         self.related: List[str] = []
         self.summary: str = None
         self.details: str = None
-        self.severity: List[OSVSeverity] = []
-        self.ranges: List[OSVRange] = []
+        self.severity: List[OSVSeverity] = severity
+        self.affected: List[OSVAffected] = affected
         self.references: List[OSVReference] = []
         self.database_specific: dict = {}
