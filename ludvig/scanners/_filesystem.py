@@ -1,5 +1,4 @@
 from typing import List
-import yara, os, glob
 from ludvig.types import Finding, Severity
 from ludvig.providers import FileSystemProvider
 from ._common import BaseScanner

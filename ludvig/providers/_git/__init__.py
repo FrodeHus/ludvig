@@ -7,3 +7,13 @@ from ._definitions import (
     GitRepository,
     ObjectCache,
 )
+
+__all__ = [
+    "GitPack",
+    "GitPackIndex",
+    "GitTreeItem",
+    "GitMainIndex",
+    "GitObjectType",
+    "GitRepository",
+    "ObjectCache",
+]
