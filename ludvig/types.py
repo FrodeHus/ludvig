@@ -160,7 +160,11 @@ class Finding:
         self.properties = {category: category}
         self.hash = hashlib.sha1(
             "|".join(
-                [self.name, self.filename, "@".join([s.content for s in self.samples])]
+                [
+                    self.name,
+                    self.filename,
+                    "@".join([s.content for s in self.samples]),
+                ]
             ).encode()
         ).hexdigest()
 
