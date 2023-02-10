@@ -133,7 +133,6 @@ class FindingSample:
         samples = []
         for str_match in match.strings:
             offset = str_match[0]
-            identifier = str_match[1]
             data = str_match[2]
             if data.isascii():
                 data = data.decode("utf-8")

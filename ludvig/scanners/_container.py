@@ -1,7 +1,7 @@
 import base64
 import os
-import tarfile, re
-from typing import IO, List
+import re
+from typing import List
 from ludvig.types import Finding, Severity
 from ludvig.providers import ContainerProvider
 from ._common import BaseScanner
