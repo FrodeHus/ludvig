@@ -61,6 +61,8 @@ class OSVulnerability:
         modified: str,
         severity: List[OSVSeverity],
         affected: List[OSVAffected],
+        references: List[OSVReference] = [],
+        database_specific: dict = {},
         schema_version="1.3.0",
     ) -> None:
         self.schema_version: str = schema_version
@@ -74,5 +76,5 @@ class OSVulnerability:
         self.details: str = None
         self.severity: List[OSVSeverity] = severity
         self.affected: List[OSVAffected] = affected
-        self.references: List[OSVReference] = []
-        self.database_specific: dict = {}
+        self.references: List[OSVReference] = references
+        self.database_specific: dict = database_specific

@@ -5,6 +5,7 @@ from ludvig.vulndb import (
     OSVAffected,
     OSVEvent,
     OSVPackage,
+    OSVReference,
 )
 import json
 
@@ -43,8 +44,19 @@ def read_advisory(file: str) -> OSVulnerability:
             )
         a = OSVAffected(package=package, ranges=ranges)
         affected.append(a)
-
+    references = []
+    if "references" in osv_data:
+        for rf in osv_data["references"]:
+            references.append(OSVReference(rf["type"], rf["url"]))
+    database_specific = (
+        osv_data["database_specific"] if "database_specific" in osv_data else {}
+    )
     osv = OSVulnerability(
-        osv_data["id"], osv_data["modified"], severity=severity, affected=affected
+        osv_data["id"],
+        osv_data["modified"],
+        severity=severity,
+        affected=affected,
+        references=references,
+        database_specific=database_specific,
     )
     return osv

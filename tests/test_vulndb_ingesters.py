@@ -11,3 +11,4 @@ class TestParseGitHubAdvisory(TestCase):
         self.assertEqual(len(advisory.affected), 1)
         self.assertEqual(len(advisory.affected[0].ranges), 1)
         self.assertEqual(len(advisory.affected[0].ranges[0].events), 2)
+        self.assertEqual(advisory.database_specific["github_reviewed"], True)
