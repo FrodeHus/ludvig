@@ -34,6 +34,14 @@ LS0006    GitHubToken       CRITICAL    samples/dotnet/Program.cs        8      
 LS0006    GitHubToken       CRITICAL    samples/secrets.json             3             f1b02a607c5ef97d66276fad99f9f0d1681944f8  2388bbe1376f05daa770f4cd75ce1dbd6a270279
 ```
 
+Here is an example of Ludvig finding secrets inside a release-build of a .NET library:
+
+```
+LS0012    PostmanApiToken   HIGH        ./samples/dotnet/Program.cs                                 8
+LS0012    PostmanApiToken   HIGH        ./samples/dotnet/obj/Release/net7.0/linux-x64/dotnet.dll    36
+LS0012    PostmanApiToken   HIGH        ./samples/dotnet/bin/Release/net7.0/linux-x64/dotnet.dll    36
+```
+
 ## Installation
 
 Either clone this repository or install using `python -m pip install ludvig`
