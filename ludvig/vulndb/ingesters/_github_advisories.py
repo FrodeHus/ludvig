@@ -1,3 +1,5 @@
+import glob
+import os
 from ludvig.vulndb import (
     OSVulnerability,
     OSVSeverity,
@@ -8,6 +10,16 @@ from ludvig.vulndb import (
     OSVReference,
 )
 import json
+
+
+def read_repository(path: str):
+    """Reads every GitHub advisory in a directory
+
+    Args:
+        path (str): Path to the directory containing advisories
+    """
+    for file in glob.iglob(os.path.join(path, "GHSA*.json"), recursive=True):
+        yield read_advisory(os.path.join(path, file))
 
 
 def read_advisory(file: str) -> OSVulnerability:
