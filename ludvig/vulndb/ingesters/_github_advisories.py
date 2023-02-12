@@ -1,4 +1,3 @@
-import glob
 import os
 from ludvig.vulndb import (
     OSVulnerability,
@@ -8,8 +7,12 @@ from ludvig.vulndb import (
     OSVEvent,
     OSVPackage,
     OSVReference,
+    OSVParseException,
 )
 import json
+from knack.log import get_logger
+
+logger = get_logger(__name__)
 
 
 def read_repository(path: str):
@@ -18,8 +21,14 @@ def read_repository(path: str):
     Args:
         path (str): Path to the directory containing advisories
     """
-    for file in glob.iglob(os.path.join(path, "GHSA*.json"), recursive=True):
-        yield read_advisory(os.path.join(path, file))
+    for root, _, files in os.walk(path):
+        for file in files:
+            if file.startswith("GHSA-"):
+                p = os.path.join(root, file)
+                try:
+                    yield read_advisory(p)
+                except OSVParseException as p:
+                    logger.warn(p)
 
 
 def read_advisory(file: str) -> OSVulnerability:
@@ -37,23 +46,26 @@ def read_advisory(file: str) -> OSVulnerability:
             item["package"]["purl"] if "purl" in item["package"] else None,
         )
 
-        for r in item["ranges"]:
-            events = []
-            for e in r["events"]:
-                if "introduced" in e:
-                    events.append(OSVEvent(introduced=e["introduced"]))
-                elif "fixed" in e:
-                    events.append(OSVEvent(fixed=e["fixed"]))
-                elif "last_affected" in e:
-                    events.append(OSVEvent(last_affected=e["fixed"]))
-                elif "limit" in e:
-                    events.append(OSVEvent(limit=e["limit"]))
+        if "ranges" in item:
+            for r in item["ranges"]:
+                events = []
+                for e in r["events"]:
+                    if "introduced" in e:
+                        events.append(OSVEvent(introduced=e["introduced"]))
+                    elif "fixed" in e:
+                        events.append(OSVEvent(fixed=e["fixed"]))
+                    elif "last_affected" in e:
+                        events.append(OSVEvent(last_affected=e["last_affected"]))
+                    elif "limit" in e:
+                        events.append(OSVEvent(limit=e["limit"]))
 
-            ranges.append(
-                OSVRange(
-                    r["type"], repo=r["repo"] if "repo" in r else None, events=events
+                ranges.append(
+                    OSVRange(
+                        r["type"],
+                        repo=r["repo"] if "repo" in r else None,
+                        events=events,
+                    )
                 )
-            )
         a = OSVAffected(package=package, ranges=ranges)
         affected.append(a)
     references = []
@@ -66,6 +78,9 @@ def read_advisory(file: str) -> OSVulnerability:
     osv = OSVulnerability(
         osv_data["id"],
         osv_data["modified"],
+        osv_data["published"] if "published" in osv_data else None,
+        osv_data["withdrawn"] if "withdrawn" in osv_data else None,
+        osv_data["aliases"] if "aliases" in osv_data else [],
         severity=severity,
         affected=affected,
         references=references,

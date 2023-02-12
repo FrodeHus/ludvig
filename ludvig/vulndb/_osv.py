@@ -5,6 +5,11 @@ import re
 from typing import List
 
 
+class OSVParseException(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+
+
 class OSVSeverity:
     def __init__(self, type: str, score: str) -> None:
         self.type: str = type
@@ -30,11 +35,7 @@ class OSVEvent:
         self.__validate()
 
     def __validate(self):
-        for a in self.__allowed:
-            if hasattr(self, a):
-                value = getattr(self, a)
-                if not validate_rfc3339_date(value):
-                    raise Exception("'{}' does not match RFC3339 date format".format(a))
+        pass
 
 
 class OSVRange:
@@ -48,12 +49,12 @@ class OSVRange:
 
     def __validate(self):
         if self.type == "git" and not self.repo:
-            raise Exception("repo is required when type is 'git'")
+            raise OSVParseException("repo is required when type is 'git'")
         if (
             not self.events
             or not len([e for e in self.events if hasattr(e, "introduced")]) >= 1
         ):
-            raise Exception(
+            raise OSVParseException(
                 "events must have atleast one occurence of an 'introduced' event"
             )
 
@@ -75,17 +76,19 @@ class OSVPackage:
             "crates.io",
             "packagist",
             "maven",
-            "nugest",
+            "nuget",
             "linux",
             "debian",
             "alpine",
             "hex",
             "android",
-            "githubactions",
+            "github actions",
             "pub",
         ]
-        if self.ecosystem not in valid_ecosystems:
-            raise Exception("{} is not a valid ecosystem".format(self.name))
+        if self.ecosystem.lower() not in valid_ecosystems:
+            raise OSVParseException(
+                "{} is not a valid ecosystem".format(self.ecosystem)
+            )
 
 
 class OSVAffected:
@@ -102,6 +105,9 @@ class OSVulnerability:
         self,
         id: str,
         modified: str,
+        published: str,
+        withdrawn: str,
+        aliases: List[str],
         severity: List[OSVSeverity],
         affected: List[OSVAffected],
         references: List[OSVReference] = [],
@@ -111,9 +117,9 @@ class OSVulnerability:
         self.schema_version: str = schema_version
         self.id: str = id
         self.modified: str = modified
-        self.published: str = None
-        self.withdrawn: str = None
-        self.aliases: List[str] = []
+        self.published: str = published
+        self.withdrawn: str = withdrawn
+        self.aliases: List[str] = aliases
         self.related: List[str] = []
         self.summary: str = None
         self.details: str = None
@@ -139,10 +145,16 @@ class OSVulnerability:
             "CVE-",
         ]
         if not self.id.startswith(tuple(valid_id_prefixes)):
-            raise Exception("not a valid id - {}".format(self.id))
+            raise OSVParseException("not a valid id - {}".format(self.id))
 
         if not validate_rfc3339_date(self.modified):
-            raise Exception("'modified' does not match RFC3339 date format")
+            raise OSVParseException("'modified' does not match RFC3339 date format")
+
+        if self.published and not validate_rfc3339_date(self.published):
+            raise OSVParseException("'published' does not match RFC3339 date format")
+
+        if self.withdrawn and not validate_rfc3339_date(self.withdrawn):
+            raise OSVParseException("'withdrawn' does not match RFC3339 date format")
 
 
 def validate_rfc3339_date(date_str: str):

@@ -53,13 +53,13 @@ class TestOpenSourceVulnerabilityValidations(TestCase):
             "crates.io",
             "packagist",
             "maven",
-            "nugest",
+            "nuget",
             "linux",
             "debian",
             "alpine",
             "hex",
             "android",
-            "githubactions",
+            "github actions",
             "pub",
         ]
         for ecosystem in expected_ecosystems:

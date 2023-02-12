@@ -4,7 +4,7 @@ from ludvig.types import Severity
 from knack import CLI, ArgumentsContext, CLICommandsLoader
 from knack.commands import CommandGroup
 from knack.invocation import CommandInvoker
-import ludvig._help  # pylint: disable=unused-import
+import ludvig._help  # noqa
 from ludvig._format import transform_finding_list, transform_git_finding_list
 
 
@@ -25,6 +25,8 @@ class LudvigCommandsLoader(CLICommandsLoader):
         with CommandGroup(self, "rules", "ludvig.commands.rules#{}") as g:
             g.command("download", "download")
             g.command("add repo", "add_repo")
+        with CommandGroup(self, "vulndb", "ludvig.commands.vulndb#{}") as g:
+            g.command("add osv", "add_osv_repository")
         return OrderedDict(self.command_table)
 
     def load_arguments(self, command):

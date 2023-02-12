@@ -6,9 +6,15 @@ from ._osv import (
     OSVRange,
     OSVReference,
     OSVSeverity,
+    OSVParseException,
 )
 
+from ._advisory import Advisory, Package
+
+from ._db import add_advisories
+
 __all__ = [
+    "Advisory",
     "OSVulnerability",
     "OSVEvent",
     "OSVAffected",
@@ -16,4 +22,7 @@ __all__ = [
     "OSVRange",
     "OSVReference",
     "OSVSeverity",
+    "OSVParseException",
+    "Package",
+    "add_advisories",
 ]

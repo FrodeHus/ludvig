@@ -35,6 +35,20 @@
       "module": "ludvig",
       "justMyCode": true,
       "args": ["rules", "download"]
+    },
+    {
+      "name": "Python: Parse OSV advisories",
+      "type": "python",
+      "request": "launch",
+      "module": "ludvig",
+      "justMyCode": true,
+      "args": [
+        "vulndb",
+        "add",
+        "osv",
+        "--path",
+        "/home/frode/src/github.com/github/advisory-database/advisories"
+      ]
     }
   ]
 }
