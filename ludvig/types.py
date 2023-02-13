@@ -38,6 +38,7 @@ class Config:
                 )
             ]
         self.rule_sources = rule_sources
+        self.vuln_db_file = os.path.join(config_path, "ludvig.db")
 
     def save(self):
         with open(self.config_file, "w") as f:

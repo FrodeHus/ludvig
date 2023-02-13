@@ -1,4 +1,3 @@
-import os
 import sqlite3
 from typing import List
 from ludvig import current_config
@@ -39,7 +38,7 @@ __sql_create_package_table = """CREATE TABLE IF NOT EXISTS Package (
 
 
 def __get_connection():
-    db_file = os.path.join(current_config.config_path, "ludvig.db")
+    db_file = current_config.vuln_db_file
     conn = None
     try:
         conn = sqlite3.connect(db_file)
@@ -121,9 +120,6 @@ def add_advisories(advisories: List[Advisory]):
                 except Exception as e:
                     logger.error(e)
         conn.commit()
-    # c.execute(
-    #     "VACUUM INTO ?", (os.path.join(current_config.config_path, "ludvig-backup.db"),)
-    # )
 
 
 def query_advisory(
