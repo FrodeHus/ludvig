@@ -20,6 +20,7 @@ class Advisory:
         modified: str = None,
         fixed_version: str = None,
         aliases: List[str] = None,
+        source: str = None,
     ) -> None:
         self.ext_id = ext_id
         if modified:
@@ -33,3 +34,4 @@ class Advisory:
         self.affected_version = affected_version
         self.fixed_version = fixed_version
         self.aliases = aliases
+        self.source = source

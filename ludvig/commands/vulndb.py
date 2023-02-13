@@ -24,6 +24,7 @@ def add_osv_repository(path: str):
                 summary=ghsa.summary,
                 details=ghsa.details,
                 affected_version="",
+                source="ghsa",
             )
             for r in affected.ranges:
                 for e in r.events:
@@ -31,7 +32,8 @@ def add_osv_repository(path: str):
                         advisory.affected_version = e.introduced
                     elif hasattr(e, "fixed"):
                         advisory.fixed_version = e.fixed
-            advisories.append(advisory)
+            if advisory.affected_version:
+                advisories.append(advisory)
             if len(advisories) > 100:
                 add_advisories(advisories)
                 advisories.clear()

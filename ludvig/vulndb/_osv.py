@@ -107,6 +107,8 @@ class OSVulnerability:
         modified: str,
         published: str,
         withdrawn: str,
+        summary: str,
+        details: str,
         aliases: List[str],
         severity: List[OSVSeverity],
         affected: List[OSVAffected],
@@ -121,8 +123,8 @@ class OSVulnerability:
         self.withdrawn: str = withdrawn
         self.aliases: List[str] = aliases
         self.related: List[str] = []
-        self.summary: str = None
-        self.details: str = None
+        self.summary: str = summary
+        self.details: str = details
         self.severity: List[OSVSeverity] = severity
         self.affected: List[OSVAffected] = affected
         self.references: List[OSVReference] = references

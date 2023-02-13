@@ -19,6 +19,7 @@ __sql_create_advisory_table = """ CREATE TABLE IF NOT EXISTS Advisory (
                                     details text,
                                     version text NOT NULL,
                                     fixed text,
+                                    source varchar(100),
                                     FOREIGN KEY (package_id) REFERENCES Package(id)
                                 ); """
 
@@ -89,7 +90,9 @@ def add_advisories(advisories: List[Advisory]):
             if not a:
                 try:
                     c.execute(
-                        "INSERT INTO advisory (package_id, ext_id, modified, published, ecosystem, summary, details, version) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+                        """INSERT INTO advisory (package_id, ext_id, modified, published, ecosystem, summary, details, version, fixed, source)
+                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
                         (
                             package_id,
                             advisory.ext_id,
@@ -99,6 +102,10 @@ def add_advisories(advisories: List[Advisory]):
                             advisory.summary,
                             advisory.details,
                             advisory.affected_version,
+                            advisory.fixed_version
+                            if hasattr(advisory, "fixed_version")
+                            else None,
+                            advisory.source,
                         ),
                     )
                     advisory_id = c.lastrowid
@@ -131,7 +138,7 @@ def query_advisory(
         SELECT a.ext_id, a.summary, a.version, a.fixed
         FROM Advisory a
         JOIN Package p ON a.package_id = p.id
-        WHERE p.name = ? AND a.ecosystem = ? and a.version = ?
+        WHERE p.name = ? AND a.ecosystem = ? and a.version = ? COLLATE NOCASE
     """,
         (
             package_name,
