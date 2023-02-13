@@ -42,7 +42,15 @@ class TestOpenSourceVulnerabilityValidations(TestCase):
             id = "%s-test-advisory" % prefix
             with self.subTest(prefix=prefix):
                 OSVulnerability(
-                    id, "2023-01-01T15:21:32.59+02:00", None, None, [], [], []
+                    id,
+                    "2023-01-01T15:21:32.59+02:00",
+                    None,
+                    None,
+                    None,
+                    None,
+                    [],
+                    [],
+                    [],
                 )
 
     def test_ecosystem_validation(self):
