@@ -3,6 +3,7 @@ import os
 from ludvig.rules import load_yara_rules
 from ludvig.types import Finding, FindingSample, SecretFinding, Severity, YaraRuleMatch
 from ludvig.rules import download_rules
+from ludvig.providers import BaseFileProvider
 from ludvig import current_config
 from knack.log import get_logger
 
@@ -18,10 +19,9 @@ class BaseScanner:
 
         yara_rules = load_yara_rules(current_config.compiled_rules)
         self.__yara_rules = yara_rules
-        self.__findings: List[Finding] = []
 
     def scan_file_data(
-        self, file_data: IO[bytes], file_name: str, **kwargs
+        self, file_data: IO[bytes], file_name: str, severity_level: Severity, **kwargs
     ) -> List[Finding]:
         findings = []
         try:
@@ -33,7 +33,7 @@ class BaseScanner:
                     if "severity" in match.meta
                     else Severity.UNKNOWN
                 )
-                if severity < self.severity_level:
+                if severity < severity_level:
                     continue
                 line = self.find_match_line_num(file_data, match)
                 samples = FindingSample.from_yara_match(match, self.deobfuscated, line)
@@ -52,8 +52,29 @@ class BaseScanner:
         line = fd.count(b"\n") + 1
         return line
 
+
+class ScanPipeline:
+    def __init__(
+        self,
+        scanners: List[BaseScanner],
+        provider: BaseFileProvider,
+        severity_level: Severity = Severity.MEDIUM,
+    ) -> None:
+        self.__scanners = scanners
+        self.__provider = provider
+        self.__findings: List[Finding] = []
+        self.__severity_level = severity_level
+
+    def scan(self):
+        for file_data, filename, properties in self.__provider.get_files():
+            for scanner in self.__scanners:
+                findings = scanner.scan_file_data(
+                    file_data, filename, self.__severity_level, **properties
+                )
+                self.register_findings(findings)
+
     def register_findings(self, findings: List[Finding]):
-        unique_hashes = {f.hash for f in self.findings}
+        unique_hashes = {f.hash for f in self.__findings}
         for finding in findings:
             if finding.hash in unique_hashes:
                 continue
