@@ -1,6 +1,6 @@
 import tarfile
 from typing import IO, List
-from ._docker._definitions import Image, LayerFile
+from ._docker._definitions import Image
 from ._providers import BaseFileProvider
 from ._docker._main import read_local_docker_image
 from knack.log import get_logger
@@ -23,7 +23,7 @@ class ContainerProvider(BaseFileProvider):
     def get_files(self):
         with self.__get_image() as image:
             layers = image.layers[1:] if not self.include_first_layer else image.layers
-            for layer in [l for l in layers if not l.empty_layer]:
+            for layer in [layer for layer in layers if not layer.empty_layer]:
                 logger.info("layer %s: %s", layer.id, layer.created_by)
                 with image.image_archive.extractfile(
                     "{}/layer.tar".format(layer.id)
@@ -41,10 +41,11 @@ class ContainerProvider(BaseFileProvider):
                                 file_data = self.__extract_file(lf, member)
                                 if not file_data:
                                     continue
-                                with LayerFile(file_data) as file_data:
-                                    if not file_data:
-                                        continue
-                                    yield file_data, member.name, layer.id, layer.created_by
+                                with file_data as f:
+                                    yield f, member.name, {
+                                        "layer_id": layer.id,
+                                        "created_by": layer.created_by,
+                                    }
                         except tarfile.ReadError:
                             logger.error("failed to read files from layer %s", layer.id)
 
