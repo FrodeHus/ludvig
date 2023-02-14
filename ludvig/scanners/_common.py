@@ -15,6 +15,19 @@ class BaseScanner(abc.ABC):
     def scan_file_data(
         self, file_data: IO[bytes], file_name: str, severity_level: Severity, **kwargs
     ) -> List[Finding]:
+        """Scans the provided file and reports any findings that matches the given severity level.
+
+        Args:
+            file_data (IO[bytes]): The actual file content
+            file_name (str): Name of the file
+            severity_level (Severity): Severity level to report on
+
+        Keyword Arguments:
+            Any additional keyword arguments are added as properties to the finding (metadata)
+
+        Returns:
+            List[Finding]: Security issues detected
+        """
         pass
 
 
@@ -31,6 +44,7 @@ class ScanPipeline:
         self.__severity_level = severity_level
 
     def scan(self):
+        """Scans every file returned by the given provider using the provided list of scanners."""
         for file_data, filename, properties in self.__provider.get_files():
             for scanner in self.__scanners:
                 if not hasattr(scanner, "scan_file_data"):

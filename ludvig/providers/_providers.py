@@ -12,6 +12,10 @@ class BaseFileProvider(abc.ABC):
 
     @abc.abstractmethod
     def get_files(self):
+        """Retrieves all files and retrieves them for use with scanners.
+
+        The list is filtered by any pattern defined in `.ludvignore` and configured max file size.
+        """
         pass
 
     def is_excluded(self, filename: str) -> bool:
