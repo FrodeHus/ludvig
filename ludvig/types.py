@@ -109,6 +109,19 @@ class YaraRuleMatch(RuleMatch):
         )
 
 
+class VulnerabilityRuleMatch(RuleMatch):
+    def __init__(
+        self,
+        ext_id: str,
+        package_name: str,
+        ecosystem: str,
+        severity: str,
+        description: str = None,
+        tags: List[str] = None,
+    ) -> None:
+        super().__init__(ext_id, package_name, severity, ecosystem, description, tags)
+
+
 class FindingSample:
     def __init__(
         self, content: str, offset: int, deobfuscated=False, line_number: int = -1
@@ -146,18 +159,20 @@ class FindingSample:
 class Finding:
     def __init__(
         self,
-        category: str,
+        type: str,
         match: RuleMatch,
-        samples: List[FindingSample],
         filename: str,
+        samples: List[FindingSample] = None,
+        **kwargs,
     ) -> None:
-        self.name = "{}/{}".format(category, match.rule_name)
+        self.name = "{}/{}".format(type, match.rule_name)
         self.match = match
         self.filename = filename
         self.samples = samples
         self.severity = match.severity
         self.comment = None
-        self.properties = {category: category}
+        self.properties = {type: type} | {**kwargs}
+
         self.hash = hashlib.sha1(
             "|".join(
                 [
@@ -177,9 +192,23 @@ class SecretFinding(Finding):
         filename: str,
         **kwargs,
     ) -> None:
-        super().__init__(rule.category, rule, samples, filename)
-        for arg in kwargs:
-            self.properties[arg] = kwargs[arg]
+        super().__init__(rule.category, rule, filename, samples, **kwargs)
+
+
+class VulnerabilityFinding(Finding):
+    from ludvig.vulndb._advisory import Advisory
+
+    def __init__(
+        self, advisory: Advisory, actual_version: str, filename: str, **kwargs
+    ) -> None:
+        match = VulnerabilityRuleMatch(
+            advisory.ext_id,
+            advisory.package.name,
+            advisory.ecosystem,
+            Severity.HIGH,
+            advisory.details,
+        )
+        super().__init__("vulnerability", match, filename, **kwargs)
 
 
 class FindingEncoder(json.JSONEncoder):

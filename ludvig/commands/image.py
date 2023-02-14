@@ -6,6 +6,7 @@ from ludvig.providers import ContainerProvider
 def scan(
     repository: str,
     severity_level: Severity = Severity.MEDIUM,
+    enabled=["secret", "vuln"],
     deobfuscated=False,
     output_sarif=None,
     include_first_layer=False,
@@ -25,9 +26,13 @@ def scan(
     provider = ContainerProvider(
         repository, include_first_layer, max_file_size=max_file_size
     )
-    pipeline = ScanPipeline(
-        [SecretScanner(deobfuscated), VulnerabilityScanner()], provider, severity_level
-    )
+    scanners = []
+    if "secret" in enabled:
+        scanners.append(SecretScanner(deobfuscated))
+    if "vuln" in enabled:
+        scanners.append(VulnerabilityScanner())
+
+    pipeline = ScanPipeline(scanners, provider, severity_level)
     pipeline.scan()
     if output_sarif:
         from ludvig.outputs import SarifConverter

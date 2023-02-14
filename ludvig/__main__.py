@@ -14,8 +14,6 @@ class LudvigCommandsLoader(CLICommandsLoader):
             self, "image", "ludvig.commands.image#{}", help="Container image operations"
         ) as g:
             g.command("scan", "scan", table_transformer=transform_finding_list)
-            g.command("whiteouts", "list_whiteouts")
-            g.command("extract", "extract_file")
         with CommandGroup(
             self, "fs", "ludvig.commands.filesystem#{}", help="File system operations"
         ) as g:
@@ -35,16 +33,25 @@ class LudvigCommandsLoader(CLICommandsLoader):
                 "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
             )
             ac.argument("max_file_size", type=int)
+            ac.argument(
+                "enabled", choices=["secret", "vuln"], default="secret vuln", nargs="+"
+            )
         with ArgumentsContext(self, "fs") as ac:
             ac.argument(
                 "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
             )
             ac.argument("max_file_size", type=int)
+            ac.argument(
+                "enabled", choices=["secret", "vuln"], default="secret vuln", nargs="+"
+            )
         with ArgumentsContext(self, "git") as ac:
             ac.argument(
                 "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
             )
             ac.argument("max_file_size", type=int)
+            ac.argument(
+                "enabled", choices=["secret", "vuln"], default="secret vuln", nargs="+"
+            )
         super(LudvigCommandsLoader, self).load_arguments(command)
 
 

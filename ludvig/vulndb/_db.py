@@ -12,8 +12,8 @@ __sql_create_advisory_table = """ CREATE TABLE IF NOT EXISTS Advisory (
                                     package_id INTEGER NOT NULL,
                                     modified datetime,
                                     published datetime,
-                                    ext_id text NOT NULL,
-                                    ecosystem text NOT NULL,
+                                    ext_id text NOT NULL COLLATE NOCASE,
+                                    ecosystem text NOT NULL COLLATE NOCASE,
                                     summary varchar(200),
                                     details text,
                                     version text NOT NULL,
@@ -25,14 +25,14 @@ __sql_create_advisory_table = """ CREATE TABLE IF NOT EXISTS Advisory (
 __sql_create_alias_table = """CREATE TABLE IF NOT EXISTS Alias (
                                 id integer PRIMARY KEY AUTOINCREMENT,
                                 advisory_id INTEGER NOT NULL,
-                                alias varchar(200),
+                                alias varchar(200) COLLATE NOCASE,
                                 FOREIGN KEY (advisory_id) REFERENCES Advisory(id)
                             );
 """
 
 __sql_create_package_table = """CREATE TABLE IF NOT EXISTS Package (
                                     id integer PRIMARY KEY AUTOINCREMENT,
-                                    name text NOT NULL
+                                    name text NOT NULL COLLATE NOCASE
 )
 """
 
@@ -126,15 +126,17 @@ def query_advisory(
     package_name: str, ecosystem: str, version: str, conn: sqlite3.Connection = None
 ):
     if not conn:
-        conn = __get_connection()
-    cursor = conn.cursor()
+        c = __get_connection()
+    else:
+        c = conn
+    cursor = c.cursor()
 
     cursor.execute(
         """
         SELECT a.ext_id, a.summary, a.version, a.fixed
         FROM Advisory a
         JOIN Package p ON a.package_id = p.id
-        WHERE p.name = ? AND a.ecosystem = ? and a.version = ? COLLATE NOCASE
+        WHERE p.name = ? AND a.ecosystem = ? and (a.version = ? or a.version = '0') COLLATE NOCASE
     """,
         (
             package_name,
@@ -143,5 +145,6 @@ def query_advisory(
         ),
     )
     result = cursor.fetchone()
-
+    if not conn:
+        c.close()
     return result
