@@ -1,3 +1,4 @@
+import abc
 from typing import IO, List
 from ludvig.types import Finding, Severity
 from ludvig.providers import BaseFileProvider
@@ -6,10 +7,11 @@ from knack.log import get_logger
 logger = get_logger(__name__)
 
 
-class BaseScanner:
+class BaseScanner(abc.ABC):
     def __init__(self, deobfuscated=False) -> None:
         self.deobfuscated = deobfuscated
 
+    @abc.abstractmethod
     def scan_file_data(
         self, file_data: IO[bytes], file_name: str, severity_level: Severity, **kwargs
     ) -> List[Finding]:

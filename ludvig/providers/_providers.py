@@ -1,14 +1,16 @@
+import abc
 from typing import List
 import os
 import fnmatch
 
 
-class BaseFileProvider:
+class BaseFileProvider(abc.ABC):
     def __init__(self, exclusions: List[str] = None, max_file_size=10000) -> None:
         self.exclusions = exclusions or []
         self.__read_ignore_file()
         self.max_file_size = max_file_size
 
+    @abc.abstractmethod
     def get_files(self):
         pass
 
