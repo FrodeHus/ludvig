@@ -20,7 +20,9 @@ class BaseFileProvider(abc.ABC):
 
     def is_excluded(self, filename: str) -> bool:
         for exclude in self.exclusions:
-            return fnmatch.fnmatch(filename, exclude)
+            if fnmatch.fnmatch(filename, exclude):
+                return True
+        return False
 
     def __read_ignore_file(self):
         if os.path.exists(".ludvignore"):

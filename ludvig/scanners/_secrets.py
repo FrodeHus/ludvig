@@ -52,3 +52,6 @@ class SecretScanner(BaseScanner):
         fd = file_data.read(match.strings[0][0])
         line = fd.count(b"\n") + 1
         return line
+
+    def accepted_files(self) -> List[str]:
+        return ["*"]

@@ -28,3 +28,6 @@ class VulnerabilityScanner(BaseScanner):
                     VulnerabilityFinding(result, component.version, "deps.json")
                 )
         return findings
+
+    def accepted_files(self) -> List[str]:
+        return ["*.deps.json"]

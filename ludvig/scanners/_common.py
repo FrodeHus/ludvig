@@ -1,4 +1,5 @@
 import abc
+import fnmatch
 from typing import IO, List
 from ludvig._types import Finding, Severity
 from ludvig.providers import BaseFileProvider
@@ -30,6 +31,16 @@ class BaseScanner(abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def accepted_files(self) -> List[str]:
+        pass
+
+    def accepts_file(self, filename: str):
+        for accepted in self.accepted_files():
+            if fnmatch.fnmatch(filename, accepted):
+                return True
+        return False
+
 
 class ScanPipeline:
     def __init__(
@@ -53,6 +64,8 @@ class ScanPipeline:
                         scanner.__class__.__name__,
                     )
                 logger.info("scanning using %s", scanner.__class__.__name__)
+                if not scanner.accepts_file(filename):
+                    continue
                 findings = scanner.scan_file_data(
                     file_data, filename, self.__severity_level, **properties
                 )
