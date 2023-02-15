@@ -69,6 +69,8 @@ class ScanPipeline:
                 findings = scanner.scan_file_data(
                     file_data, filename, self.__severity_level, **properties
                 )
+                if hasattr(file_data, "seek") and callable(getattr(file_data, "seek")):
+                    file_data.seek(0)
                 self.register_findings(findings)
         self.close_scanners()
 
@@ -78,10 +80,12 @@ class ScanPipeline:
                 scanner.close()
 
     def register_findings(self, findings: List[Finding]):
+
         unique_hashes = {f.hash for f in self.__findings}
         for finding in findings:
             if finding.hash in unique_hashes:
                 continue
+
             self.__findings.append(finding)
 
     def get_unique_findings(self):

@@ -25,7 +25,7 @@ class VulnerabilityScanner(BaseScanner):
             )
             for result in results:
                 findings.append(
-                    VulnerabilityFinding(result, component.version, "deps.json")
+                    VulnerabilityFinding(result, component.version, file_name)
                 )
         return findings
 

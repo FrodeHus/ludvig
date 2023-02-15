@@ -10,7 +10,6 @@ def transform_finding_list(result):
                 ("Name", r["match"]["ruleName"]),
                 ("Severity", r["severity"]),
                 ("Filename", r["filename"]),
-                ("LineNumber", r["samples"][0]["lineNumber"]),
             ]
         )
         transformed.append(res)

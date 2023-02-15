@@ -1,7 +1,7 @@
 import sqlite3
 from typing import List
 from knack.log import get_logger
-from ludvig.vulndb import Advisory
+from ludvig.vulndb import Advisory, Package
 
 logger = get_logger(__name__)
 
@@ -133,7 +133,7 @@ class VulnDb(object):
 
         cursor.execute(
             """
-            SELECT a.ext_id, a.summary, a.version, a.fixed
+            SELECT a.ext_id, p.name, a.summary, a.details, a.ecosystem, a.version, a.fixed
             FROM Advisory a
             JOIN Package p ON a.package_id = p.id
             WHERE p.name = ? AND a.ecosystem = ? and (a.version = ? or a.version = '0') COLLATE NOCASE
@@ -145,7 +145,21 @@ class VulnDb(object):
             ),
         )
         result = cursor.fetchone()
-        return result
+        if result:
+            return [
+                Advisory(
+                    result[0],
+                    None,
+                    Package(result[1]),
+                    result[2],
+                    None,
+                    result[3],
+                    result[4],
+                    None,
+                    result[5],
+                )
+            ]
+        return []
 
     def __enter__(self):
         return self

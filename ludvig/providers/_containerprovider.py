@@ -14,7 +14,7 @@ class ContainerProvider(BaseFileProvider):
         repository: str,
         include_first_layer=False,
         exclusions: List[str] = None,
-        max_file_size=10000,
+        max_file_size=200000,
     ) -> None:
         super().__init__(exclusions=exclusions, max_file_size=max_file_size)
         self.repository = repository

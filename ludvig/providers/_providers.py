@@ -5,7 +5,7 @@ import fnmatch
 
 
 class BaseFileProvider(abc.ABC):
-    def __init__(self, exclusions: List[str] = None, max_file_size=10000) -> None:
+    def __init__(self, exclusions: List[str] = None, max_file_size=200000) -> None:
         self.exclusions = exclusions or []
         self.__read_ignore_file()
         self.max_file_size = max_file_size

@@ -115,7 +115,7 @@ class VulnerabilityRuleMatch(RuleMatch):
         ext_id: str,
         package_name: str,
         ecosystem: str,
-        severity: str,
+        severity: Severity,
         description: str = None,
         tags: List[str] = None,
     ) -> None:
