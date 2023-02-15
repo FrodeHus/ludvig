@@ -1,6 +1,6 @@
 import abc
 from typing import IO, List
-from ludvig.types import Finding, Severity
+from ludvig._types import Finding, Severity
 from ludvig.providers import BaseFileProvider
 from knack.log import get_logger
 
@@ -57,6 +57,12 @@ class ScanPipeline:
                     file_data, filename, self.__severity_level, **properties
                 )
                 self.register_findings(findings)
+        self.close_scanners()
+
+    def close_scanners(self):
+        for scanner in self.__scanners:
+            if hasattr(scanner, "close") and callable(getattr(scanner, "close")):
+                scanner.close()
 
     def register_findings(self, findings: List[Finding]):
         unique_hashes = {f.hash for f in self.__findings}

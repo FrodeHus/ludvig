@@ -1,13 +1,13 @@
 import sqlite3
 from typing import List
-from ludvig import current_config
 from knack.log import get_logger
 from ludvig.vulndb import Advisory
-from contextlib import closing
 
 logger = get_logger(__name__)
 
-__sql_create_advisory_table = """ CREATE TABLE IF NOT EXISTS Advisory (
+
+class VulnDb(object):
+    __sql_create_advisory_table = """ CREATE TABLE IF NOT EXISTS Advisory (
                                     id integer PRIMARY KEY AUTOINCREMENT,
                                     package_id INTEGER NOT NULL,
                                     modified datetime,
@@ -22,52 +22,55 @@ __sql_create_advisory_table = """ CREATE TABLE IF NOT EXISTS Advisory (
                                     FOREIGN KEY (package_id) REFERENCES Package(id)
                                 ); """
 
-__sql_create_alias_table = """CREATE TABLE IF NOT EXISTS Alias (
-                                id integer PRIMARY KEY AUTOINCREMENT,
-                                advisory_id INTEGER NOT NULL,
-                                alias varchar(200) COLLATE NOCASE,
-                                FOREIGN KEY (advisory_id) REFERENCES Advisory(id)
-                            );
-"""
-
-__sql_create_package_table = """CREATE TABLE IF NOT EXISTS Package (
+    __sql_create_alias_table = """CREATE TABLE IF NOT EXISTS Alias (
                                     id integer PRIMARY KEY AUTOINCREMENT,
-                                    name text NOT NULL COLLATE NOCASE
-)
-"""
+                                    advisory_id INTEGER NOT NULL,
+                                    alias varchar(200) COLLATE NOCASE,
+                                    FOREIGN KEY (advisory_id) REFERENCES Advisory(id)
+                                );
+    """
 
-
-def __get_connection():
-    db_file = current_config.vuln_db_file
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-        if not __verify_db_exists(conn.cursor()):
-            __create_db(conn.cursor())
-        return conn
-    except sqlite3.Error as e:
-        logger.error(e)
-
-
-def __verify_db_exists(c: sqlite3.Cursor):
-    res = c.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='advisory';"
+    __sql_create_package_table = """CREATE TABLE IF NOT EXISTS Package (
+                                        id integer PRIMARY KEY AUTOINCREMENT,
+                                        name text NOT NULL COLLATE NOCASE
     )
-    result = res.fetchone()
-    if result and "advisories" in result:
-        return True
-    return False
+    """
 
+    def __init__(self, db_file: str = None) -> None:
+        if not db_file:
+            from ludvig import Config
 
-def __create_db(c: sqlite3.Cursor):
-    c.execute(__sql_create_package_table)
-    c.execute(__sql_create_advisory_table)
-    c.execute(__sql_create_alias_table)
+            current_config = Config.load()
+            db_file = current_config.vuln_db_file
+        self.__conn = self.__get_connection(db_file)
 
+    def __get_connection(self, db_file: str):
 
-def add_advisories(advisories: List[Advisory]):
-    with closing(__get_connection()) as conn:
-        c = conn.cursor()
+        conn = None
+        try:
+            conn = sqlite3.connect(db_file)
+            if not self.__verify_db_exists(conn.cursor()):
+                self.__create_db(conn.cursor())
+            return conn
+        except sqlite3.Error as e:
+            logger.error(e)
+
+    def __verify_db_exists(self, c: sqlite3.Cursor):
+        res = c.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='advisory';"
+        )
+        result = res.fetchone()
+        if result and "advisories" in result:
+            return True
+        return False
+
+    def __create_db(self, c: sqlite3.Cursor):
+        c.execute(self.__sql_create_package_table)
+        c.execute(self.__sql_create_advisory_table)
+        c.execute(self.__sql_create_alias_table)
+
+    def add_advisories(self, advisories: List[Advisory]):
+        c = self.__conn.cursor()
         for advisory in advisories:
             p = c.execute(
                 "SELECT id from package where name = ?", (advisory.package.name,)
@@ -80,11 +83,10 @@ def add_advisories(advisories: List[Advisory]):
             else:
                 package_id = p[0]
 
-            a = query_advisory(
+            a = self.query_advisory(
                 advisory.package.name,
                 advisory.ecosystem,
                 advisory.affected_version,
-                conn=conn,
             )
             if not a:
                 try:
@@ -119,32 +121,37 @@ def add_advisories(advisories: List[Advisory]):
                             )
                 except Exception as e:
                     logger.error(e)
-        conn.commit()
+        self.__conn.commit()
 
+    def query_advisory(
+        self,
+        package_name: str,
+        ecosystem: str,
+        version: str,
+    ):
+        cursor = self.__conn.cursor()
 
-def query_advisory(
-    package_name: str, ecosystem: str, version: str, conn: sqlite3.Connection = None
-):
-    if not conn:
-        c = __get_connection()
-    else:
-        c = conn
-    cursor = c.cursor()
+        cursor.execute(
+            """
+            SELECT a.ext_id, a.summary, a.version, a.fixed
+            FROM Advisory a
+            JOIN Package p ON a.package_id = p.id
+            WHERE p.name = ? AND a.ecosystem = ? and (a.version = ? or a.version = '0') COLLATE NOCASE
+        """,
+            (
+                package_name,
+                ecosystem,
+                version,
+            ),
+        )
+        result = cursor.fetchone()
+        return result
 
-    cursor.execute(
-        """
-        SELECT a.ext_id, a.summary, a.version, a.fixed
-        FROM Advisory a
-        JOIN Package p ON a.package_id = p.id
-        WHERE p.name = ? AND a.ecosystem = ? and (a.version = ? or a.version = '0') COLLATE NOCASE
-    """,
-        (
-            package_name,
-            ecosystem,
-            version,
-        ),
-    )
-    result = cursor.fetchone()
-    if not conn:
-        c.close()
-    return result
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
+    def close(self):
+        self.__conn.close()

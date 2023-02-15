@@ -11,7 +11,7 @@ from ._osv import (
 
 from ._advisory import Advisory, Package
 
-from ._db import add_advisories, query_advisory
+from ._db import VulnDb
 
 __all__ = [
     "Advisory",
@@ -24,6 +24,5 @@ __all__ = [
     "OSVSeverity",
     "OSVParseException",
     "Package",
-    "add_advisories",
-    "query_advisory",
+    "VulnDb",
 ]

@@ -1,6 +1,6 @@
 import json
 from unittest import TestCase
-from ludvig.types import Finding, FindingSample, RuleMatch, Severity
+from ludvig import Finding, FindingSample, RuleMatch, Severity
 from ludvig.outputs import SarifConverter
 
 
@@ -13,8 +13,8 @@ class TestSarifLogGenerator(TestCase):
         finding = Finding(
             "secret",
             RuleMatch("GitHub Token", Severity.CRITICAL, "secrets", "Test rule"),
-            [sample],
             "testfile.json",
+            [sample],
         )
         report = SarifConverter.from_findings([finding])
         report = json.loads(report)

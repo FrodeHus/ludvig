@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import sys
-from ludvig.types import Severity
+from ludvig import Severity
 from knack import CLI, ArgumentsContext, CLICommandsLoader
 from knack.commands import CommandGroup
 from knack.invocation import CommandInvoker

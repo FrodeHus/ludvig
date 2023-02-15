@@ -1,4 +1,4 @@
-from ludvig.types import Severity
+from ludvig import Severity
 from ludvig.providers import GitRepositoryProvider
 from ludvig.scanners import FilesystemScanner
 from knack.log import get_logger

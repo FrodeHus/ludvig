@@ -1,5 +1,5 @@
 from ludvig.scanners import SecretScanner, VulnerabilityScanner, ScanPipeline
-from ludvig.types import Severity
+from ludvig import Severity
 from ludvig.providers import ContainerProvider
 
 

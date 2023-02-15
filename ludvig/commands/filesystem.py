@@ -1,4 +1,4 @@
-from ludvig.types import Severity
+from ludvig import Severity
 from ludvig.scanners import ScanPipeline, SecretScanner, VulnerabilityScanner
 from ludvig.providers import FileSystemProvider
 

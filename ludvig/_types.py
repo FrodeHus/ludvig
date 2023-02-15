@@ -208,7 +208,9 @@ class VulnerabilityFinding(Finding):
             Severity.HIGH,
             advisory.details,
         )
-        super().__init__("vulnerability", match, filename, **kwargs)
+        super().__init__(
+            type="vulnerability", match=match, filename=filename, samples=[], **kwargs
+        )
 
 
 class FindingEncoder(json.JSONEncoder):
