@@ -3,16 +3,17 @@ from collections import OrderedDict
 
 def transform_finding_list(result):
     transformed = []
-    for r in result:
-        res = OrderedDict(
-            [
-                ("RuleId", r["match"]["id"]),
-                ("Name", r["match"]["ruleName"]),
-                ("Severity", r["severity"]),
-                ("Filename", r["filename"]),
-            ]
-        )
-        transformed.append(res)
+    for type in result:
+        for r in result[type]:
+            res = OrderedDict(
+                [
+                    ("RuleId", r["match"]["id"]),
+                    ("Name", r["match"]["ruleName"]),
+                    ("Severity", r["severity"]),
+                    ("Filename", r["filename"]),
+                ]
+            )
+            transformed.append(res)
     return transformed
 
 

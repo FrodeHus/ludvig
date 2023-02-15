@@ -31,4 +31,4 @@ def scan(
         report = SarifConverter.from_findings(pipeline.get_unique_findings())
         with open(output_sarif, "w") as r:
             r.write(report)
-    return pipeline.get_unique_findings()
+    return pipeline.findings

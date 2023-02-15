@@ -1,6 +1,6 @@
 import abc
 import fnmatch
-from typing import IO, List
+from typing import IO, Dict, List
 from ludvig._types import Finding, Severity
 from ludvig.providers import BaseFileProvider
 from knack.log import get_logger
@@ -51,7 +51,7 @@ class ScanPipeline:
     ) -> None:
         self.__scanners = scanners
         self.__provider = provider
-        self.__findings: List[Finding] = []
+        self.findings: Dict[str, List[Finding]] = {}
         self.__severity_level = severity_level
 
     def scan(self):
@@ -80,20 +80,15 @@ class ScanPipeline:
                 scanner.close()
 
     def register_findings(self, findings: List[Finding]):
+        unique_hashes = []
+        for type in self.findings:
+            unique_hashes.extend([f.hash for f in self.findings[type]])
 
-        unique_hashes = {f.hash for f in self.__findings}
         for finding in findings:
             if finding.hash in unique_hashes:
                 continue
 
-            self.__findings.append(finding)
-
-    def get_unique_findings(self):
-        unique_hashes = list({f.hash for f in self.__findings})
-        unique_findings = []
-        for finding in self.__findings:
-            if finding.hash in unique_hashes:
-                unique_findings.append(finding)
-                unique_hashes.remove(finding.hash)
-
-        return unique_findings
+            type = finding.properties["type"]
+            if type not in self.findings:
+                self.findings[type] = []
+            self.findings[type].append(finding)

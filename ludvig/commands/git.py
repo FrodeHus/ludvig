@@ -40,4 +40,4 @@ def scan(
         report = SarifConverter.from_findings(scanner.get_unique_findings())
         with open(output_sarif, "w") as r:
             r.write(report)
-    return scanner.get_unique_findings()
+    return scanner.findings

@@ -169,9 +169,11 @@ class Finding:
         self.match = match
         self.filename = filename
         self.samples = samples
-        self.severity = match.severity
+        self.severity = (
+            match.severity.name if hasattr(match.severity, "name") else match.severity
+        )
         self.comment = None
-        self.properties = {type: type} | {**kwargs}
+        self.properties = {"type": type} | {**kwargs}
 
         self.hash = hashlib.sha1(
             "|".join(
@@ -209,7 +211,7 @@ class VulnerabilityFinding(Finding):
             advisory.details,
         )
         super().__init__(
-            type="vulnerability", match=match, filename=filename, samples=[], **kwargs
+            type="vulnerabilities", match=match, filename=filename, samples=[], **kwargs
         )
 
 
