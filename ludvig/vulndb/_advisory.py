@@ -14,6 +14,7 @@ class Package:
 
 @dataclass
 class Advisory:
+    id: int
     ext_id: str
     published: str
     package: Package
@@ -27,6 +28,7 @@ class Advisory:
     source: str = field(default=None)
 
     def __post_init__(self):
+        self.id = f"LV{self.id:06}"
         if self.modified:
             self.modified = parse(self.modified)
         if self.published:

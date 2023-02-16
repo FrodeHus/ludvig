@@ -133,7 +133,7 @@ class VulnDb(object):
 
         cursor.execute(
             """
-            SELECT a.ext_id, p.name, a.summary, a.details, a.ecosystem, a.version, a.fixed
+            SELECT a.id, a.ext_id, p.name, a.summary, a.details, a.ecosystem, a.version, a.fixed
             FROM Advisory a
             JOIN Package p ON a.package_id = p.id
             WHERE p.name = ? AND a.ecosystem = ? and (a.version = ? or a.version = '0') COLLATE NOCASE
@@ -149,14 +149,15 @@ class VulnDb(object):
             return [
                 Advisory(
                     result[0],
+                    result[1],
                     None,
-                    Package(result[1]),
-                    result[2],
-                    None,
+                    Package(result[2]),
                     result[3],
-                    result[4],
                     None,
+                    result[4],
                     result[5],
+                    None,
+                    result[6],
                 )
             ]
         return []
