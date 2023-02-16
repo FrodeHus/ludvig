@@ -81,14 +81,14 @@ class ScanPipeline:
 
     def register_findings(self, findings: List[Finding]):
         unique_hashes = []
-        for type in self.findings:
-            unique_hashes.extend([f.hash for f in self.findings[type]])
+        for category in self.findings:
+            unique_hashes.extend([f._hash for f in self.findings[category]])
 
         for finding in findings:
-            if finding.hash in unique_hashes:
+            if finding._hash in unique_hashes:
                 continue
 
-            type = finding.properties["type"]
-            if type not in self.findings:
-                self.findings[type] = []
-            self.findings[type].append(finding)
+            category = finding.properties["category"]
+            if category not in self.findings:
+                self.findings[category] = []
+            self.findings[category].append(finding)

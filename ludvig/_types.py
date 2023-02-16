@@ -5,6 +5,7 @@ from typing import List
 import yara
 from ludvig.rules import RuleSetSource
 import hashlib
+from dataclasses import dataclass, field, asdict
 
 
 class ConfigEncoder(json.JSONEncoder):
@@ -79,22 +80,18 @@ class Severity(IntEnum):
     CRITICAL = 4
 
 
+@dataclass
 class RuleMatch:
-    def __init__(
-        self,
-        id: str,
-        rule_name: str,
-        severity: Severity = Severity.MEDIUM,
-        category: str = None,
-        description: str = None,
-        tags: List[str] = None,
-    ) -> None:
-        self.id = id
-        self.rule_name = rule_name
-        self.severity = severity
-        self.tags = tags
-        self.category = category
-        self.description = description
+    rule_id: str
+    rule_name: str
+    severity: Severity = field(default_factory=lambda: Severity.MEDIUM)
+    category: str = field(default=None)
+    description: str = field(default=None)
+    tags: list[str] = field(default_factory=lambda: [])
+
+    @property
+    def __dict__(self):
+        return asdict(self)
 
 
 class YaraRuleMatch(RuleMatch):
@@ -102,9 +99,11 @@ class YaraRuleMatch(RuleMatch):
         super().__init__(
             yara.meta["id"] if "id" in yara.meta else "LS00000",
             yara.rule,
-            yara.meta["severity"] if "severity" in yara.meta else "UNKNOWN",
+            Severity[yara.meta["severity"]]
+            if "severity" in yara.meta
+            else Severity.UNKNOWN,
             yara.namespace,
-            yara.meta["description"] if "description" in yara.meta else None,
+            yara.meta["description"] if "description" in yara.meta else "",
             yara.tags,
         )
 
@@ -156,26 +155,21 @@ class FindingSample:
         return samples
 
 
+@dataclass
 class Finding:
-    def __init__(
-        self,
-        type: str,
-        match: RuleMatch,
-        filename: str,
-        samples: List[FindingSample] = None,
-        **kwargs,
-    ) -> None:
-        self.name = "{}/{}".format(type, match.rule_name)
-        self.match = match
-        self.filename = filename
-        self.samples = samples
-        self.severity = (
-            match.severity.name if hasattr(match.severity, "name") else match.severity
-        )
-        self.comment = None
-        self.properties = {"type": type} | {**kwargs}
+    category: str
+    rule: RuleMatch
+    filename: str
+    severity: Severity = field(init=False)
+    samples: list[FindingSample] = field(default_factory=lambda: [])
+    properties: dict = field(default_factory=dict)
+    _hash: str = field(init=False, repr=False)
 
-        self.hash = hashlib.sha1(
+    def __post_init__(self):
+        self.name = f"{self.category}/{self.rule.rule_name}"
+        self.severity = self.rule.severity
+        self.properties.update({"category": self.category})
+        self._hash = hashlib.sha1(
             "|".join(
                 [
                     self.name,
@@ -184,6 +178,10 @@ class Finding:
                 ]
             ).encode()
         ).hexdigest()
+
+    @property
+    def __dict__(self):
+        return asdict(self)
 
 
 class SecretFinding(Finding):
@@ -211,10 +209,9 @@ class VulnerabilityFinding(Finding):
             advisory.details,
         )
         super().__init__(
-            type="vulnerabilities", match=match, filename=filename, samples=[], **kwargs
+            category="vulnerabilities",
+            rule=match,
+            filename=filename,
+            samples=[],
+            **kwargs,
         )
-
-
-class FindingEncoder(json.JSONEncoder):
-    def default(self, o: Finding):
-        return o.__dict__

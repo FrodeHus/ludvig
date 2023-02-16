@@ -1,37 +1,37 @@
 from typing import List
 from dateutil.parser import parse
+from dataclasses import dataclass, asdict, field
 
 
+@dataclass
 class Package:
-    def __init__(self, name: str) -> None:
-        self.name = name
+    name: str
+
+    @property
+    def __dict__(self):
+        return asdict(self)
 
 
+@dataclass
 class Advisory:
-    def __init__(
-        self,
-        ext_id: str,
-        published: str,
-        package: Package,
-        ecosystem: str,
-        summary: str,
-        details: str,
-        affected_version: str,
-        modified: str = None,
-        fixed_version: str = None,
-        aliases: List[str] = None,
-        source: str = None,
-    ) -> None:
-        self.ext_id = ext_id
-        if modified:
-            self.modified = parse(modified)
-        if published:
-            self.published = parse(published)
-        self.package = package
-        self.ecosystem = ecosystem
-        self.summary = summary
-        self.details = details
-        self.affected_version = affected_version
-        self.fixed_version = fixed_version
-        self.aliases = aliases
-        self.source = source
+    ext_id: str
+    published: str
+    package: Package
+    ecosystem: str
+    summary: str
+    details: str
+    affected_version: str
+    modified: str = field(default=None)
+    fixed_version: str = field(default=None)
+    aliases: List[str] = field(default=None)
+    source: str = field(default=None)
+
+    def __post_init__(self):
+        if self.modified:
+            self.modified = parse(self.modified)
+        if self.published:
+            self.published = parse(self.published)
+
+    @property
+    def __dict__(self):
+        return asdict(self)

@@ -7,8 +7,8 @@ def transform_finding_list(result):
         for r in result[type]:
             res = OrderedDict(
                 [
-                    ("RuleId", r["match"]["id"]),
-                    ("Name", r["match"]["ruleName"]),
+                    ("RuleId", r["rule"]["rule_id"]),
+                    ("Name", r["rule"]["rule_name"]),
                     ("Severity", r["severity"]),
                     ("Filename", r["filename"]),
                 ]
@@ -23,8 +23,8 @@ def transform_git_finding_list(result):
 
         res = OrderedDict(
             [
-                ("RuleId", r["match"]["id"]),
-                ("Name", r["match"]["ruleName"]),
+                ("RuleId", r["rule"]["rule_id"]),
+                ("Name", r["rule"]["ruleName"]),
                 ("Severity", r["severity"]),
                 ("Filename", r["filename"]),
                 ("LineNumber", r["samples"][0]["lineNumber"]),

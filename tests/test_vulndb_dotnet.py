@@ -33,7 +33,7 @@ class TestVulnDbDotNet(TestCase):
         with open(deps_file, "r") as f:
             findings = scanner.scan_file_data(f, "deps.json", Severity.MEDIUM)
         self.assertEqual(len(findings), 1)
-        self.assertEqual(findings[0].match.rule_name, "Newtonsoft.Json")
+        self.assertEqual(findings[0].rule.rule_name, "Newtonsoft.Json")
         queryMock.assert_called_with(
             mock.ANY,
             package_name="Newtonsoft.Json",
