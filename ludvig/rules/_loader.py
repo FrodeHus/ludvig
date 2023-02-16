@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory, TemporaryFile
 from typing import IO, List
 import yara
 import os
-from ._definitions import RuleSetSource
+from ludvig.config import RuleSetSource
 import tarfile
 import requests
 from knack.log import get_logger
