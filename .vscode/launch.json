@@ -35,6 +35,14 @@
       "module": "ludvig",
       "justMyCode": true,
       "args": ["rules", "download"]
+    },
+    {
+      "name": "Python: VulnDb build",
+      "type": "python",
+      "request": "launch",
+      "module": "ludvig",
+      "justMyCode": true,
+      "args": ["vulndb", "build"]
     }
   ]
 }

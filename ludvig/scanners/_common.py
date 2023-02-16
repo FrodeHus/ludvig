@@ -1,70 +1,94 @@
-from typing import IO, List
-import os
-from ludvig.rules import load_yara_rules
-from ludvig.types import Finding, FindingSample, SecretFinding, Severity, YaraRuleMatch
-from ludvig.rules import download_rules
-from ludvig import current_config
+import abc
+import fnmatch
+from typing import IO, Dict, List
+from ludvig._types import Finding, Severity
+from ludvig.providers import BaseFileProvider
 from knack.log import get_logger
 
 logger = get_logger(__name__)
 
 
-class BaseScanner:
+class BaseScanner(abc.ABC):
     def __init__(self, deobfuscated=False) -> None:
         self.deobfuscated = deobfuscated
-        if not os.path.exists(current_config.compiled_rules):
-            logger.info("no rules found - downloading defaults...")
-            download_rules(current_config.rule_sources, current_config.config_path)
 
-        yara_rules = load_yara_rules(current_config.compiled_rules)
-        self.__yara_rules = yara_rules
-        self.__findings: List[Finding] = []
-
+    @abc.abstractmethod
     def scan_file_data(
-        self, file_data: IO[bytes], file_name: str, **kwargs
+        self, file_data: IO[bytes], file_name: str, severity_level: Severity, **kwargs
     ) -> List[Finding]:
-        findings = []
-        try:
-            matches = self.__yara_rules.match(data=file_data.read())
-            for match in matches:
+        """Scans the provided file and reports any findings that matches the given severity level.
 
-                severity = (
-                    Severity[match.meta["severity"]]
-                    if "severity" in match.meta
-                    else Severity.UNKNOWN
-                )
-                if severity < self.severity_level:
+        Args:
+            file_data (IO[bytes]): The actual file content
+            file_name (str): Name of the file
+            severity_level (Severity): Severity level to report on
+
+        Keyword Arguments:
+            Any additional keyword arguments are added as properties to the finding (metadata)
+
+        Returns:
+            List[Finding]: Security issues detected
+        """
+        pass
+
+    @abc.abstractmethod
+    def accepted_files(self) -> List[str]:
+        pass
+
+    def accepts_file(self, filename: str):
+        for accepted in self.accepted_files():
+            if fnmatch.fnmatch(filename, accepted):
+                return True
+        return False
+
+
+class ScanPipeline:
+    def __init__(
+        self,
+        scanners: List[BaseScanner],
+        provider: BaseFileProvider,
+        severity_level: Severity = Severity.MEDIUM,
+    ) -> None:
+        self.__scanners = scanners
+        self.__provider = provider
+        self.findings: Dict[str, List[Finding]] = {}
+        self.__severity_level = severity_level
+
+    def scan(self):
+        """Scans every file returned by the given provider using the provided list of scanners."""
+        for file_data, filename, properties in self.__provider.get_files():
+            for scanner in self.__scanners:
+                if not hasattr(scanner, "scan_file_data"):
+                    logger.error(
+                        "%s does not implement required method 'scan_file_data'",
+                        scanner.__class__.__name__,
+                    )
+                logger.info("scanning using %s", scanner.__class__.__name__)
+                if not scanner.accepts_file(filename):
                     continue
-                line = self.find_match_line_num(file_data, match)
-                samples = FindingSample.from_yara_match(match, self.deobfuscated, line)
-                finding = SecretFinding(
-                    YaraRuleMatch(match), samples, file_name, **kwargs
+                findings = scanner.scan_file_data(
+                    file_data, filename, self.__severity_level, **properties
                 )
-                findings.append(finding)
-        except Exception as ex:
-            return print(ex)
-        finally:
-            return findings
+                if hasattr(file_data, "seek") and callable(getattr(file_data, "seek")):
+                    file_data.seek(0)
+                self.register_findings(findings)
+        self.close_scanners()
 
-    def find_match_line_num(self, file_data, match):
-        file_data.seek(0)
-        fd = file_data.read(match.strings[0][0])
-        line = fd.count(b"\n") + 1
-        return line
+    def close_scanners(self):
+        for scanner in self.__scanners:
+            if hasattr(scanner, "close") and callable(getattr(scanner, "close")):
+                scanner.close()
 
     def register_findings(self, findings: List[Finding]):
-        unique_hashes = {f.hash for f in self.findings}
+        unique_hashes = []
+        for category in self.findings:
+            unique_hashes.extend([f._hash for f in self.findings[category]])
+
         for finding in findings:
-            if finding.hash in unique_hashes:
+            if finding._hash in unique_hashes:
                 continue
-            self.__findings.append(finding)
 
-    def get_unique_findings(self):
-        unique_hashes = list({f.hash for f in self.__findings})
-        unique_findings = []
-        for finding in self.__findings:
-            if finding.hash in unique_hashes:
-                unique_findings.append(finding)
-                unique_hashes.remove(finding.hash)
-
-        return unique_findings
+            category = finding.properties["category"]
+            if category not in self.findings:
+                self.findings[category] = []
+            self.findings[category].append(finding)

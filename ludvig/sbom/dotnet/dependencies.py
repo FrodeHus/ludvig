@@ -1,8 +1,5 @@
-import json
-from typing import IO
-from cyclonedx.model import HashType
 from cyclonedx.model.component import Component
-from cyclonedx.parser import BaseParser, ParserWarning
+from cyclonedx.parser import BaseParser
 from packageurl import PackageURL
 
 from ludvig.sbom.dotnet.dependencies_file import DependenciesFile

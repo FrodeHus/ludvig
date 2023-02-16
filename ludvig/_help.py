@@ -27,3 +27,10 @@ helps[
 type: group
 short-summary: Maintain rule sets
 """
+
+helps[
+    "vulndb"
+] = """
+type: group
+short-summary: Vulnerability database tasks
+"""

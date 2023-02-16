@@ -16,7 +16,7 @@ def read_local_docker_image(repository: str) -> Image:
     with img.extractfile(manifest[0]["Config"]) as cf:
         config = json.load(cf)
 
-    file_layers = [layer for layer in config["history"] if not "empty_layer" in layer]
+    file_layers = [layer for layer in config["history"] if "empty_layer" not in layer]
     layers = []
     for idx, layer in enumerate(manifest[0]["Layers"]):
         layer_id = layer[: layer.index("/")]

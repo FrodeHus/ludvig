@@ -1,10 +1,10 @@
 from collections import OrderedDict
 import sys
-from ludvig.types import Severity
+from ludvig import Severity
 from knack import CLI, ArgumentsContext, CLICommandsLoader
 from knack.commands import CommandGroup
 from knack.invocation import CommandInvoker
-import ludvig._help  # pylint: disable=unused-import
+import ludvig._help  # noqa
 from ludvig._format import transform_finding_list, transform_git_finding_list
 
 
@@ -14,8 +14,6 @@ class LudvigCommandsLoader(CLICommandsLoader):
             self, "image", "ludvig.commands.image#{}", help="Container image operations"
         ) as g:
             g.command("scan", "scan", table_transformer=transform_finding_list)
-            g.command("whiteouts", "list_whiteouts")
-            g.command("extract", "extract_file")
         with CommandGroup(
             self, "fs", "ludvig.commands.filesystem#{}", help="File system operations"
         ) as g:
@@ -25,6 +23,8 @@ class LudvigCommandsLoader(CLICommandsLoader):
         with CommandGroup(self, "rules", "ludvig.commands.rules#{}") as g:
             g.command("download", "download")
             g.command("add repo", "add_repo")
+        with CommandGroup(self, "vulndb", "ludvig.commands.vulndb#{}") as g:
+            g.command("build", "build")
         return OrderedDict(self.command_table)
 
     def load_arguments(self, command):
@@ -33,16 +33,25 @@ class LudvigCommandsLoader(CLICommandsLoader):
                 "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
             )
             ac.argument("max_file_size", type=int)
+            ac.argument(
+                "enabled", choices=["secret", "vuln"], default="secret vuln", nargs="+"
+            )
         with ArgumentsContext(self, "fs") as ac:
             ac.argument(
                 "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
             )
             ac.argument("max_file_size", type=int)
+            ac.argument(
+                "enabled", choices=["secret", "vuln"], default="secret vuln", nargs="+"
+            )
         with ArgumentsContext(self, "git") as ac:
             ac.argument(
                 "severity_level", choices=[e.name for e in Severity], default="MEDIUM"
             )
             ac.argument("max_file_size", type=int)
+            ac.argument(
+                "enabled", choices=["secret", "vuln"], default="secret vuln", nargs="+"
+            )
         super(LudvigCommandsLoader, self).load_arguments(command)
 
 

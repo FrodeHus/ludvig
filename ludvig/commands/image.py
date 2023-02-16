@@ -1,11 +1,12 @@
-from ludvig.scanners import ImageScanner
-from ludvig.types import Severity
+from ludvig.scanners import SecretScanner, VulnerabilityScanner, ScanPipeline
+from ludvig import Severity
 from ludvig.providers import ContainerProvider
 
 
 def scan(
     repository: str,
     severity_level: Severity = Severity.MEDIUM,
+    enabled=["secret", "vuln"],
     deobfuscated=False,
     output_sarif=None,
     include_first_layer=False,
@@ -25,35 +26,29 @@ def scan(
     provider = ContainerProvider(
         repository, include_first_layer, max_file_size=max_file_size
     )
-    scanner = ImageScanner(provider, severity_level, deobfuscated)
-    scanner.scan()
+    scanners = []
+    if "secret" in enabled:
+        scanners.append(SecretScanner(deobfuscated))
+    if "vuln" in enabled:
+        scanners.append(VulnerabilityScanner())
+
+    pipeline = ScanPipeline(scanners, provider, severity_level)
+    pipeline.scan()
     if output_sarif:
         from ludvig.outputs import SarifConverter
 
-        report = SarifConverter.from_findings(scanner.get_unique_findings())
+        report = SarifConverter.from_findings(pipeline.get_unique_findings())
         with open(output_sarif, "w") as r:
             r.write(report)
-    return scanner.get_unique_findings()
+    return pipeline.findings
 
 
-def list_whiteouts(repository: str, include_first_layer=False):
-    """
-    Scans a container image for deleted files
-    :param repository: Container image to scan
-    :param include_first_layer: Scan first layer (base image) as well - may affect speed. Defaults to False.
-    """
-    provider = ContainerProvider(repository, include_first_layer)
-    scanner = ImageScanner(provider)
-    return scanner.list_whiteout()
-
-
-def extract_file(repository: str, filename: str, output_file: str):
-    """
-    Extracts a file from the specified container image (even if marked as deleted) - first occurence only
-    :param repository: Container image to read from
-    :param filename: File to extract (full path)
-    :param output_file: Output file
-    """
-    provider = ContainerProvider(repository)
-    scanner = ImageScanner(provider)
-    scanner.extract_file(filename, output_file)
+# def list_whiteouts(repository: str, include_first_layer=False):
+#     """
+#     Scans a container image for deleted files
+#     :param repository: Container image to scan
+#     :param include_first_layer: Scan first layer (base image) as well - may affect speed. Defaults to False.
+#     """
+#     provider = ContainerProvider(repository, include_first_layer)
+#     scanner = ImageScanner(provider)
+#     return scanner.list_whiteout()

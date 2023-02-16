@@ -5,6 +5,8 @@ from typing import List
 import yara
 from ludvig.rules import RuleSetSource
 import hashlib
+from dataclasses import dataclass, field, asdict
+from ludvig.vulndb import Advisory, VulnDbSource
 
 
 class ConfigEncoder(json.JSONEncoder):
@@ -16,7 +18,10 @@ class ConfigEncoder(json.JSONEncoder):
 
 class Config:
     def __init__(
-        self, config_path: str, rule_sources: List[RuleSetSource] = None
+        self,
+        config_path: str,
+        rule_sources: list[RuleSetSource] = None,
+        vulndb_sources: list[VulnDbSource] = None,
     ) -> None:
         self.config_path = config_path
         self.compiled_rules = os.path.join(config_path, "ludvig.rules")
@@ -37,7 +42,17 @@ class Config:
                     "https://github.com/FrodeHus/ludvig-rules/archive/refs/tags/v0.0.1.tar.gz",
                 )
             ]
+
         self.rule_sources = rule_sources
+        if not vulndb_sources:
+            vulndb_sources = [
+                VulnDbSource(
+                    "GitHub Advisory",
+                    "https://github.com/github/advisory-database/archive/refs/heads/main.zip",
+                )
+            ]
+        self.vulndb_sources = vulndb_sources
+        self.vuln_db_file = os.path.join(config_path, "ludvig.db")
 
     def save(self):
         with open(self.config_file, "w") as f:
@@ -78,33 +93,39 @@ class Severity(IntEnum):
     CRITICAL = 4
 
 
+@dataclass
 class RuleMatch:
-    def __init__(
-        self,
-        id: str,
-        rule_name: str,
-        severity: Severity = Severity.MEDIUM,
-        category: str = None,
-        description: str = None,
-        tags: List[str] = None,
-    ) -> None:
-        self.id = id
-        self.rule_name = rule_name
-        self.severity = severity
-        self.tags = tags
-        self.category = category
-        self.description = description
+    rule_id: str
+    rule_name: str
+    severity: Severity = field(default_factory=lambda: Severity.MEDIUM)
+    category: str = field(default=None)
+    description: str = field(default=None)
+    tags: list[str] = field(default_factory=lambda: [])
 
+    @property
+    def __dict__(self):
+        return asdict(self)
 
-class YaraRuleMatch(RuleMatch):
-    def __init__(self, yara: yara.Match) -> None:
-        super().__init__(
+    @staticmethod
+    def from_yara_match(yara: yara.Match) -> "RuleMatch":
+        return RuleMatch(
             yara.meta["id"] if "id" in yara.meta else "LS00000",
             yara.rule,
-            yara.meta["severity"] if "severity" in yara.meta else "UNKNOWN",
+            Severity[yara.meta["severity"]]
+            if "severity" in yara.meta
+            else Severity.UNKNOWN,
             yara.namespace,
-            yara.meta["description"] if "description" in yara.meta else None,
+            yara.meta["description"] if "description" in yara.meta else "",
             yara.tags,
+        )
+
+    def from_vuln_advisory(advisory: Advisory) -> "RuleMatch":
+        return RuleMatch(
+            advisory.id,
+            advisory.ext_id,
+            Severity.HIGH,
+            advisory.ecosystem,
+            advisory.details,
         )
 
 
@@ -133,7 +154,6 @@ class FindingSample:
         samples = []
         for str_match in match.strings:
             offset = str_match[0]
-            identifier = str_match[1]
             data = str_match[2]
             if data.isascii():
                 data = data.decode("utf-8")
@@ -143,22 +163,22 @@ class FindingSample:
         return samples
 
 
+@dataclass
 class Finding:
-    def __init__(
-        self,
-        category: str,
-        match: RuleMatch,
-        samples: List[FindingSample],
-        filename: str,
-    ) -> None:
-        self.name = "{}/{}".format(category, match.rule_name)
-        self.match = match
-        self.filename = filename
-        self.samples = samples
-        self.severity = match.severity
-        self.comment = None
-        self.properties = {category: category}
-        self.hash = hashlib.sha1(
+    id: str
+    category: str
+    rule: RuleMatch
+    filename: str
+    severity: Severity = field(init=False)
+    samples: list[FindingSample] = field(default_factory=lambda: [])
+    properties: dict = field(default_factory=dict)
+    _hash: str = field(init=False, repr=False)
+
+    def __post_init__(self):
+        self.name = f"{self.category}/{self.rule.rule_name}"
+        self.severity = self.rule.severity
+        self.properties.update({"category": self.category})
+        self._hash = hashlib.sha1(
             "|".join(
                 [
                     self.name,
@@ -168,20 +188,29 @@ class Finding:
             ).encode()
         ).hexdigest()
 
+    @property
+    def __dict__(self):
+        return asdict(self)
 
-class SecretFinding(Finding):
-    def __init__(
-        self,
-        rule: RuleMatch,
-        samples: List[FindingSample],
-        filename: str,
-        **kwargs,
-    ) -> None:
-        super().__init__(rule.category, rule, samples, filename)
-        for arg in kwargs:
-            self.properties[arg] = kwargs[arg]
+    @staticmethod
+    def from_secret(
+        yara_match: yara.Match,
+        samples: list[FindingSample],
+        file_name: str,
+        meta: dict = {},
+    ) -> "Finding":
+        rule = RuleMatch.from_yara_match(yara_match)
+        return Finding(rule.rule_id, rule.category, rule, file_name, samples, meta)
 
-
-class FindingEncoder(json.JSONEncoder):
-    def default(self, o: Finding):
-        return o.__dict__
+    @staticmethod
+    def from_vuln_advisory(
+        advisory: Advisory, actual_version: str, filename: str, meta: dict = {}
+    ) -> "Finding":
+        rule = RuleMatch.from_vuln_advisory(advisory)
+        return Finding(
+            advisory.id,
+            "vulnerabilities",
+            rule=rule,
+            filename=advisory.package.name,
+            properties=meta,
+        )

@@ -1,4 +1,4 @@
-from ludvig.types import Severity
+from ludvig import Severity
 from ludvig.providers import GitRepositoryProvider
 from ludvig.scanners import FilesystemScanner
 from knack.log import get_logger
@@ -40,4 +40,4 @@ def scan(
         report = SarifConverter.from_findings(scanner.get_unique_findings())
         with open(output_sarif, "w") as r:
             r.write(report)
-    return scanner.get_unique_findings()
+    return scanner.findings
