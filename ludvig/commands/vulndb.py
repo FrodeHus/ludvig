@@ -10,4 +10,4 @@ def build():
     Builds the vulnerability database from scratch
     """
     current_config = get_config()
-    VulnDb.build(current_config.vuln_db_file, current_config.vulndb_sources)
+    VulnDb.build(current_config)

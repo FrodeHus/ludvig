@@ -55,54 +55,54 @@ class VulnDb(object):
             VulnDb.build(config.vuln_db_file, config.vulndb_sources)
 
     @staticmethod
-    def build(vuln_db_file: str, sources=list[VulnDbSource]) -> None:
-        if os.path.exists(vuln_db_file):
-            os.remove(vuln_db_file)
+    def build(config: Config) -> None:
+        if os.path.exists(config.vuln_db_file):
+            os.remove(config.vuln_db_file)
 
-        for src in sources:
+        for src in config.vulndb_sources:
             with TemporaryDirectory(prefix="ludvig_vulndb_") as p:
                 logger.warn(f"Downloading {src.name} from {src.uri}...")
                 file = os.path.join(p, f"{uuid.uuid1().hex}.zip")
                 urllib.request.urlretrieve(src.uri, file)
                 ZipFile(file).extractall(p)
                 logger.warn("Building database...")
-                VulnDb.add_osvs(p)
+                with VulnDb(config) as vuln_db:
+                    VulnDb.add_osvs(p, vuln_db)
 
     @staticmethod
-    def add_osvs(path: str) -> None:
+    def add_osvs(path: str, vuln_db: "VulnDb") -> None:
         from ludvig.vulndb.ingesters import github_read_repository
 
         advisories = []
-        with VulnDb() as vulnDb:
-            for idx, ghsa in enumerate(github_read_repository(path), start=1):
-                for affected in ghsa.affected:
-                    package = Package(affected.package.name)
+        for idx, ghsa in enumerate(github_read_repository(path), start=1):
+            for affected in ghsa.affected:
+                package = Package(affected.package.name)
 
-                    advisory = Advisory(
-                        id=None,
-                        ext_id=ghsa.id,
-                        published=ghsa.published,
-                        modified=ghsa.modified,
-                        aliases=ghsa.aliases,
-                        package=package,
-                        ecosystem=affected.package.ecosystem,
-                        summary=ghsa.summary,
-                        details=ghsa.details,
-                        affected_version="",
-                        source="ghsa",
-                    )
-                    for r in affected.ranges:
-                        for e in r.events:
-                            if hasattr(e, "introduced"):
-                                advisory.affected_version = e.introduced
-                            elif hasattr(e, "fixed"):
-                                advisory.fixed_version = e.fixed
-                    if advisory.affected_version:
-                        advisories.append(advisory)
-                    if len(advisories) > 100:
-                        vulnDb.add_advisories(advisories)
-                        advisories.clear()
-            vulnDb.add_advisories(advisories)
+                advisory = Advisory(
+                    id=None,
+                    ext_id=ghsa.id,
+                    published=ghsa.published,
+                    modified=ghsa.modified,
+                    aliases=ghsa.aliases,
+                    package=package,
+                    ecosystem=affected.package.ecosystem,
+                    summary=ghsa.summary,
+                    details=ghsa.details,
+                    affected_version="",
+                    source="ghsa",
+                )
+                for r in affected.ranges:
+                    for e in r.events:
+                        if hasattr(e, "introduced"):
+                            advisory.affected_version = e.introduced
+                        elif hasattr(e, "fixed"):
+                            advisory.fixed_version = e.fixed
+                if advisory.affected_version:
+                    advisories.append(advisory)
+                if len(advisories) > 100:
+                    vuln_db.add_advisories(advisories)
+                    advisories.clear()
+        vuln_db.add_advisories(advisories)
 
     def __get_connection(self, db_file: str):
 
