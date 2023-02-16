@@ -24,7 +24,7 @@ class LudvigCommandsLoader(CLICommandsLoader):
             g.command("download", "download")
             g.command("add repo", "add_repo")
         with CommandGroup(self, "vulndb", "ludvig.commands.vulndb#{}") as g:
-            g.command("add osv", "add_osv_repository")
+            g.command("build", "build")
         return OrderedDict(self.command_table)
 
     def load_arguments(self, command):

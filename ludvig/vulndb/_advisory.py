@@ -28,7 +28,7 @@ class Advisory:
     source: str = field(default=None)
 
     def __post_init__(self):
-        self.id = f"LV{self.id:06}"
+        self.id = f"LV{self.id:06}" if self.id is not None else self.id
         if self.modified:
             self.modified = parse(self.modified)
         if self.published:

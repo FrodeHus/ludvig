@@ -6,7 +6,7 @@ import yara
 from ludvig.rules import RuleSetSource
 import hashlib
 from dataclasses import dataclass, field, asdict
-from ludvig.vulndb._advisory import Advisory
+from ludvig.vulndb import Advisory, VulnDbSource
 
 
 class ConfigEncoder(json.JSONEncoder):
@@ -18,7 +18,10 @@ class ConfigEncoder(json.JSONEncoder):
 
 class Config:
     def __init__(
-        self, config_path: str, rule_sources: List[RuleSetSource] = None
+        self,
+        config_path: str,
+        rule_sources: list[RuleSetSource] = None,
+        vulndb_sources: list[VulnDbSource] = None,
     ) -> None:
         self.config_path = config_path
         self.compiled_rules = os.path.join(config_path, "ludvig.rules")
@@ -39,7 +42,16 @@ class Config:
                     "https://github.com/FrodeHus/ludvig-rules/archive/refs/tags/v0.0.1.tar.gz",
                 )
             ]
+
         self.rule_sources = rule_sources
+        if not vulndb_sources:
+            vulndb_sources = [
+                VulnDbSource(
+                    "GitHub Advisory",
+                    "https://github.com/github/advisory-database/archive/refs/heads/main.zip",
+                )
+            ]
+        self.vulndb_sources = vulndb_sources
         self.vuln_db_file = os.path.join(config_path, "ludvig.db")
 
     def save(self):
