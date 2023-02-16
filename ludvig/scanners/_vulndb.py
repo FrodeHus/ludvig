@@ -1,7 +1,7 @@
 from typing import IO, List
 from ludvig.sbom.dotnet.dependencies import DotnetDependenciesParser
 from cyclonedx.model.bom import Bom
-from ludvig._types import Finding, Severity, VulnerabilityFinding
+from ludvig._types import Finding, Severity
 from ._common import BaseScanner
 from ludvig.vulndb import VulnDb
 
@@ -25,7 +25,7 @@ class VulnerabilityScanner(BaseScanner):
             )
             for result in results:
                 findings.append(
-                    VulnerabilityFinding(result, component.version, file_name)
+                    Finding.from_vuln_advisory(result, component.version, file_name)
                 )
         return findings
 

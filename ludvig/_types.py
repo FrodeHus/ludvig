@@ -6,6 +6,7 @@ import yara
 from ludvig.rules import RuleSetSource
 import hashlib
 from dataclasses import dataclass, field, asdict
+from ludvig.vulndb._advisory import Advisory
 
 
 class ConfigEncoder(json.JSONEncoder):
@@ -93,10 +94,9 @@ class RuleMatch:
     def __dict__(self):
         return asdict(self)
 
-
-class YaraRuleMatch(RuleMatch):
-    def __init__(self, yara: yara.Match) -> None:
-        super().__init__(
+    @staticmethod
+    def from_yara_match(yara: yara.Match) -> "RuleMatch":
+        return RuleMatch(
             yara.meta["id"] if "id" in yara.meta else "LS00000",
             yara.rule,
             Severity[yara.meta["severity"]]
@@ -107,18 +107,14 @@ class YaraRuleMatch(RuleMatch):
             yara.tags,
         )
 
-
-class VulnerabilityRuleMatch(RuleMatch):
-    def __init__(
-        self,
-        ext_id: str,
-        package_name: str,
-        ecosystem: str,
-        severity: Severity,
-        description: str = None,
-        tags: List[str] = None,
-    ) -> None:
-        super().__init__(ext_id, package_name, severity, ecosystem, description, tags)
+    def from_vuln_advisory(advisory: Advisory) -> "RuleMatch":
+        return RuleMatch(
+            advisory.id,
+            advisory.ext_id,
+            Severity.HIGH,
+            advisory.ecosystem,
+            advisory.details,
+        )
 
 
 class FindingSample:
@@ -157,6 +153,7 @@ class FindingSample:
 
 @dataclass
 class Finding:
+    id: str
     category: str
     rule: RuleMatch
     filename: str
@@ -183,35 +180,25 @@ class Finding:
     def __dict__(self):
         return asdict(self)
 
+    @staticmethod
+    def from_secret(
+        yara_match: yara.Match,
+        samples: list[FindingSample],
+        file_name: str,
+        meta: dict = {},
+    ) -> "Finding":
+        rule = RuleMatch.from_yara_match(yara_match)
+        return Finding(rule.rule_id, rule.category, rule, file_name, samples, meta)
 
-class SecretFinding(Finding):
-    def __init__(
-        self,
-        rule: RuleMatch,
-        samples: List[FindingSample],
-        filename: str,
-        **kwargs,
-    ) -> None:
-        super().__init__(rule.category, rule, filename, samples, **kwargs)
-
-
-class VulnerabilityFinding(Finding):
-    from ludvig.vulndb._advisory import Advisory
-
-    def __init__(
-        self, advisory: Advisory, actual_version: str, filename: str, **kwargs
-    ) -> None:
-        match = VulnerabilityRuleMatch(
-            advisory.ext_id,
-            advisory.package.name,
-            advisory.ecosystem,
-            Severity.HIGH,
-            advisory.details,
-        )
-        super().__init__(
-            category="vulnerabilities",
-            rule=match,
-            filename=filename,
-            samples=[],
-            **kwargs,
+    @staticmethod
+    def from_vuln_advisory(
+        advisory: Advisory, actual_version: str, filename: str, meta: dict = {}
+    ) -> "Finding":
+        rule = RuleMatch.from_vuln_advisory(advisory)
+        return Finding(
+            advisory.id,
+            "vulnerabilities",
+            rule=rule,
+            filename=advisory.package.name,
+            properties=meta,
         )

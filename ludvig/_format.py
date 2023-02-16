@@ -7,7 +7,7 @@ def transform_finding_list(result):
         for r in result[type]:
             res = OrderedDict(
                 [
-                    ("RuleId", r["rule"]["rule_id"]),
+                    ("Id", r["id"]),
                     ("Name", r["rule"]["rule_name"]),
                     ("Severity", r["severity"]),
                     ("Filename", r["filename"]),

@@ -5,7 +5,7 @@ from ludvig import Config
 import os
 from knack.log import get_logger
 from typing import IO, List
-from ludvig import Finding, FindingSample, SecretFinding, Severity, YaraRuleMatch
+from ludvig import Finding, FindingSample, Severity
 
 logger = get_logger(__name__)
 
@@ -38,9 +38,7 @@ class SecretScanner(BaseScanner):
                     continue
                 line = self.find_match_line_num(file_data, match)
                 samples = FindingSample.from_yara_match(match, self.deobfuscated, line)
-                finding = SecretFinding(
-                    YaraRuleMatch(match), samples, file_name, **kwargs
-                )
+                finding = Finding.from_secret(match, samples, file_name, **kwargs)
                 findings.append(finding)
         except Exception as ex:
             return print(ex)

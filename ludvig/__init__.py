@@ -5,11 +5,7 @@ from ._types import (
     Finding,
     FindingSample,
     RuleMatch,
-    SecretFinding,
     Severity,
-    VulnerabilityRuleMatch,
-    VulnerabilityFinding,
-    YaraRuleMatch,
 )
 
 __all__ = [
@@ -17,9 +13,5 @@ __all__ = [
     "Finding",
     "FindingSample",
     "RuleMatch",
-    "SecretFinding",
     "Severity",
-    "VulnerabilityRuleMatch",
-    "VulnerabilityFinding",
-    "YaraRuleMatch",
 ]

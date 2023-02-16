@@ -11,8 +11,11 @@ class TestSarifLogGenerator(TestCase):
     def test_result_from_finding(self) -> None:
         sample = FindingSample("test", 0)
         finding = Finding(
+            1,
             "secret",
-            RuleMatch("GitHub Token", Severity.CRITICAL, "secrets", "Test rule"),
+            RuleMatch(
+                "test", "GitHub Token", Severity.CRITICAL, "secrets", "Test rule"
+            ),
             "testfile.json",
             [sample],
         )
