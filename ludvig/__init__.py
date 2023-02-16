@@ -1,7 +1,6 @@
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 
 from ._types import (
-    Config,
     Finding,
     FindingSample,
     RuleMatch,
@@ -9,7 +8,6 @@ from ._types import (
 )
 
 __all__ = [
-    "Config",
     "Finding",
     "FindingSample",
     "RuleMatch",

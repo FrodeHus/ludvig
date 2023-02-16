@@ -1,7 +1,7 @@
 from typing import IO, List
 from ludvig.sbom.dotnet.dependencies import DotnetDependenciesParser
 from cyclonedx.model.bom import Bom
-from ludvig._types import Finding, Severity
+from ludvig import Finding, Severity
 from ._common import BaseScanner
 from ludvig.vulndb import VulnDb
 
@@ -9,6 +9,7 @@ from ludvig.vulndb import VulnDb
 class VulnerabilityScanner(BaseScanner):
     def __init__(self) -> None:
         super().__init__(False)
+        VulnDb.ensure()
         self.__db = VulnDb()
 
     def scan_file_data(
