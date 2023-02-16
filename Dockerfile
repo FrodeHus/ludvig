@@ -39,7 +39,7 @@ RUN apk add --no-cache -t .build-deps py3-setuptools \
   && echo "rule dummy { condition: true }" > /rules/test_rule \
   && rm -rf /tmp/* \
   && apk del --purge .build-deps
-RUN mkdir /ludvig && cd /ludvig
+WORKDIR /ludvig
 COPY . .
 COPY requirements.txt .
 #no need to install yara-python as its already been compiled and installed

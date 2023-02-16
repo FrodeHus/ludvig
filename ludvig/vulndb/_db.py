@@ -52,7 +52,7 @@ class VulnDb(object):
     def ensure(config: Config) -> None:
         if not os.path.exists(config.vuln_db_file):
             logger.warn("No vulnerability database exists - rebuilding...")
-            VulnDb.build(config.vuln_db_file, config.vulndb_sources)
+            VulnDb.build(config)
 
     @staticmethod
     def build(config: Config) -> None:
