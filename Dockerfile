@@ -39,10 +39,11 @@ RUN apk add --no-cache -t .build-deps py3-setuptools \
   && echo "rule dummy { condition: true }" > /rules/test_rule \
   && rm -rf /tmp/* \
   && apk del --purge .build-deps
-COPY ludvig ludvig
+RUN mkdir /ludvig && cd /ludvig
+COPY . .
 COPY requirements.txt .
 #no need to install yara-python as its already been compiled and installed
-RUN sed -i 's/yara-python==[0-9\.]\{5\}//g' requirements.txt 
-RUN pip install -r requirements.txt
-RUN python -m ludvig vulndb build
-ENTRYPOINT [ "python", "-m", "ludvig" ]
+RUN sed -i "s/'yara-python==[0-9\.]\{5\}',\n//g" pyproject.toml
+RUN pip install .
+RUN ludvig vulndb build
+ENTRYPOINT [ "ludvig" ]

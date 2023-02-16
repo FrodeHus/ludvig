@@ -7,7 +7,7 @@ from zipfile import ZipFile
 from knack.log import get_logger
 import urllib.request
 from ._advisory import Advisory, Package
-from ludvig.config import Config, VulnDbSource
+from ludvig.config import Config
 
 logger = get_logger(__name__)
 
