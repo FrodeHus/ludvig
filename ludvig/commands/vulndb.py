@@ -38,5 +38,4 @@ def add_osv_repository(path: str):
                 if len(advisories) > 100:
                     vulnDb.add_advisories(advisories)
                     advisories.clear()
-            print("count: {}".format(idx))
         vulnDb.add_advisories(advisories)
