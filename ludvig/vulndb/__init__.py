@@ -11,7 +11,7 @@ from ._osv import (
 
 from ._advisory import Advisory, Package
 
-from ._db import VulnDb
+from ._db import VulnDb, get_vuln_db
 
 __all__ = [
     "Advisory",
@@ -25,4 +25,5 @@ __all__ = [
     "OSVParseException",
     "Package",
     "VulnDb",
+    "get_vuln_db",
 ]

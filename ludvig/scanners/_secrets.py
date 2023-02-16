@@ -1,7 +1,7 @@
 from ._common import BaseScanner
 from ludvig.rules import load_yara_rules
 from ludvig.rules import download_rules
-from ludvig.config import get_config
+from ludvig.config import Config
 import os
 from knack.log import get_logger
 from typing import IO, List
@@ -11,14 +11,13 @@ logger = get_logger(__name__)
 
 
 class SecretScanner(BaseScanner):
-    def __init__(self, deobfuscated=False) -> None:
-        super().__init__(deobfuscated)
-        current_config = get_config()
-        if not os.path.exists(current_config.compiled_rules):
+    def __init__(self, config: Config, deobfuscated=False) -> None:
+        super().__init__(config, deobfuscated)
+        if not os.path.exists(config.compiled_rules):
             logger.info("no rules found - downloading defaults...")
-            download_rules(current_config.rule_sources, current_config.config_path)
+            download_rules(config.rule_sources, config.config_path)
 
-        yara_rules = load_yara_rules(current_config.compiled_rules)
+        yara_rules = load_yara_rules(config.compiled_rules)
         self.__yara_rules = yara_rules
 
     def scan_file_data(

@@ -1,6 +1,8 @@
 from ludvig.scanners import SecretScanner, VulnerabilityScanner, ScanPipeline
 from ludvig import Severity
 from ludvig.providers import ContainerProvider
+from ludvig.config import get_config
+from ludvig.vulndb import get_vuln_db
 
 
 def scan(
@@ -26,18 +28,19 @@ def scan(
     provider = ContainerProvider(
         repository, include_first_layer, max_file_size=max_file_size
     )
+    config = get_config()
     scanners = []
     if "secret" in enabled:
-        scanners.append(SecretScanner(deobfuscated))
+        scanners.append(SecretScanner(config, deobfuscated))
     if "vuln" in enabled:
-        scanners.append(VulnerabilityScanner())
+        scanners.append(VulnerabilityScanner(get_vuln_db(config), config))
 
     pipeline = ScanPipeline(scanners, provider, severity_level)
     pipeline.scan()
     if output_sarif:
         from ludvig.outputs import SarifConverter
 
-        report = SarifConverter.from_findings(pipeline.get_unique_findings())
+        report = SarifConverter.from_findings(pipeline.findings)
         with open(output_sarif, "w") as r:
             r.write(report)
     return pipeline.findings

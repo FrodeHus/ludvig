@@ -7,7 +7,7 @@ from zipfile import ZipFile
 from knack.log import get_logger
 import urllib.request
 from ._advisory import Advisory, Package
-from ludvig.config import get_config, VulnDbSource
+from ludvig.config import Config, VulnDbSource
 
 logger = get_logger(__name__)
 
@@ -42,13 +42,14 @@ class VulnDb(object):
     )
     """
 
-    def __init__(self) -> None:
-        config = get_config()
-        self.__conn = self.__get_connection(config.vuln_db_file)
+    def __init__(self, config: Config, conn: sqlite3.Connection = None) -> None:
+        if not conn:
+            self.__conn = self.__get_connection(config.vuln_db_file)
+        else:
+            self.__conn = conn
 
     @staticmethod
-    def ensure() -> None:
-        config = get_config()
+    def ensure(config: Config) -> None:
         if not os.path.exists(config.vuln_db_file):
             logger.warn("No vulnerability database exists - rebuilding...")
             VulnDb.build(config.vuln_db_file, config.vulndb_sources)
@@ -229,3 +230,8 @@ class VulnDb(object):
 
     def close(self):
         self.__conn.close()
+
+
+def get_vuln_db(config: Config) -> VulnDb:
+    VulnDb.ensure(config)
+    return VulnDb(config)
