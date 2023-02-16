@@ -2,15 +2,15 @@ from typing import IO, List
 from ludvig.sbom.dotnet.dependencies import DotnetDependenciesParser
 from cyclonedx.model.bom import Bom
 from ludvig import Finding, Severity
+from ludvig.config import Config
 from ._common import BaseScanner
 from ludvig.vulndb import VulnDb
 
 
 class VulnerabilityScanner(BaseScanner):
-    def __init__(self) -> None:
-        super().__init__(False)
-        VulnDb.ensure()
-        self.__db = VulnDb()
+    def __init__(self, vuln_db: VulnDb, config: Config) -> None:
+        super().__init__(False, config)
+        self.__db = vuln_db
 
     def scan_file_data(
         self, file_data: IO[bytes], file_name: str, severity_level: Severity, **kwargs

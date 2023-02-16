@@ -1,6 +1,8 @@
 from ludvig import Severity
 from ludvig.scanners import ScanPipeline, SecretScanner, VulnerabilityScanner
 from ludvig.providers import FileSystemProvider
+from ludvig.config import get_config
+from ludvig.vulndb import get_vuln_db
 
 
 def scan(
@@ -21,14 +23,20 @@ def scan(
     if isinstance(severity_level, str):
         severity_level = Severity[severity_level]
     provider = FileSystemProvider(path, max_file_size=max_file_size)
+    config = get_config()
     pipeline = ScanPipeline(
-        [SecretScanner(deobfuscated), VulnerabilityScanner()], provider, severity_level
+        [
+            SecretScanner(config, deobfuscated),
+            VulnerabilityScanner(get_vuln_db(config), config),
+        ],
+        provider,
+        severity_level,
     )
     pipeline.scan()
     if output_sarif:
         from ludvig.outputs import SarifConverter
 
-        report = SarifConverter.from_findings(pipeline.get_unique_findings())
+        report = SarifConverter.from_findings(pipeline.findings)
         with open(output_sarif, "w") as r:
             r.write(report)
     return pipeline.findings

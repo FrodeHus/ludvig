@@ -1,7 +1,9 @@
 from ludvig import Severity
 from ludvig.providers import GitRepositoryProvider
-from ludvig.scanners import FilesystemScanner
+from ludvig.scanners import ScanPipeline, SecretScanner, VulnerabilityScanner
 from knack.log import get_logger
+from ludvig.config import get_config
+from ludvig.vulndb import get_vuln_db
 
 logger = get_logger(__name__)
 
@@ -32,12 +34,20 @@ def scan(
         logger.warn("fast scan is ENABLED - might lead to inaccurate results")
 
     git_provider = GitRepositoryProvider(path, commit=commit, fast_scan=fast)
-    scanner = FilesystemScanner(git_provider, severity_level, deobfuscated)
-    scanner.scan()
+    config = get_config()
+    pipeline = ScanPipeline(
+        [
+            SecretScanner(config, deobfuscated),
+            VulnerabilityScanner(get_vuln_db(config), config),
+        ],
+        git_provider,
+        severity_level,
+    )
+    pipeline.scan()
     if output_sarif:
         from ludvig.outputs import SarifConverter
 
-        report = SarifConverter.from_findings(scanner.get_unique_findings())
+        report = SarifConverter.from_findings(pipeline.findings)
         with open(output_sarif, "w") as r:
             r.write(report)
-    return scanner.findings
+    return pipeline.findings

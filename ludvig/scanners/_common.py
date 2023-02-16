@@ -3,13 +3,15 @@ import fnmatch
 from typing import IO, Dict, List
 from ludvig._types import Finding, Severity
 from ludvig.providers import BaseFileProvider
+from ludvig.config import Config
 from knack.log import get_logger
 
 logger = get_logger(__name__)
 
 
 class BaseScanner(abc.ABC):
-    def __init__(self, deobfuscated=False) -> None:
+    def __init__(self, config: Config, deobfuscated=False) -> None:
+        self.config = config
         self.deobfuscated = deobfuscated
 
     @abc.abstractmethod
