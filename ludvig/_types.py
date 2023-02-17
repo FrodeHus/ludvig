@@ -99,6 +99,8 @@ class Finding:
     def __post_init__(self):
         self.name = f"{self.category}/{self.rule.rule_name}"
         self.severity = self.rule.severity
+        if not self.properties:
+            self.properties = {}
         self.properties.update({"category": self.category})
         self._hash = hashlib.sha1(
             "|".join(
