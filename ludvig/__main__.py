@@ -6,7 +6,7 @@ from knack import CLI, ArgumentsContext, CLICommandsLoader
 from knack.commands import CommandGroup
 from knack.invocation import CommandInvoker
 import ludvig._help  # noqa
-from ludvig.utils import create_ludvig_data_pack
+from ludvig.utils import create_ludvig_data_pack, download_latest_release
 from ludvig._format import transform_finding_list, transform_git_finding_list
 
 
@@ -16,6 +16,13 @@ def create_data_pack(output_file: str):
     :param output_file: Path to .tar.gz file
     """
     create_ludvig_data_pack(get_config(), output_file)
+
+
+def download_assets():
+    """
+    Downloads rules, vulnerability database etc from latest release.
+    """
+    download_latest_release(get_config())
 
 
 class LudvigCommandsLoader(CLICommandsLoader):
@@ -37,6 +44,7 @@ class LudvigCommandsLoader(CLICommandsLoader):
             g.command("build", "build", confirmation=True)
         with CommandGroup(self, "", "ludvig.__main__#{}") as g:
             g.command("pack", "create_data_pack")
+            g.command("download", "download_assets")
         return OrderedDict(self.command_table)
 
     def load_arguments(self, command):

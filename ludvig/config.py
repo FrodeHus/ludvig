@@ -45,6 +45,7 @@ class Config:
         self.config_path = config_path
         self.compiled_rules = os.path.join(config_path, "ludvig.rules")
         self.config_file = os.path.join(config_path, "config.json")
+        self.latest_data_release = "https://github.com/frodehus/ludvig-rules/releases/latest/download/ludvig-assets.tar.gz"
         if rule_sources and "Built-in" not in rule_sources:
             rule_sources.append(
                 RuleSetSource(

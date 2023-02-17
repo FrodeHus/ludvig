@@ -5,6 +5,8 @@ import os
 from ludvig.config import Config
 from knack.log import get_logger
 import tarfile
+import urllib.request
+import tempfile
 
 logger = get_logger(__name__)
 
@@ -40,3 +42,13 @@ def create_ludvig_data_pack(config: Config, output_file: str):
     with tarfile.open(output_file, "w:gz") as tarball:
         tarball.add(config.vuln_db_file)
         tarball.add(config.compiled_rules)
+
+
+def download_latest_release(config: Config):
+    with tempfile.TemporaryFile() as tmp:
+        try:
+            urllib.request.urlretrieve(config.latest_data_release, tmp)
+            with tarfile.open(tmp, "r:gz") as tarball:
+                tarball.extractall(config.config_path)
+        except urllib.error.HTTPError as e:
+            logger.error("failed to download latest assets: %s", e)
