@@ -45,5 +45,4 @@ COPY requirements.txt .
 #no need to install yara-python as its already been compiled and installed
 RUN sed -i "s/'yara-python==[0-9\.]\{5\}',\n//g" pyproject.toml
 RUN pip install .
-RUN ludvig vulndb build
 ENTRYPOINT [ "ludvig" ]
