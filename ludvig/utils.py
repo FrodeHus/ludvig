@@ -1,4 +1,12 @@
 from typing import Tuple
+from ludvig.rules import download_rules
+from ludvig.vulndb import VulnDb
+import os
+from ludvig.config import Config
+from knack.log import get_logger
+import tarfile
+
+logger = get_logger(__name__)
 
 
 def get_line_number(content: str, position: int) -> Tuple[int, str]:
@@ -16,3 +24,19 @@ def get_line_number(content: str, position: int) -> Tuple[int, str]:
             lower = index + 1
 
     return lower - 1, lines[lower - 1]
+
+
+def create_ludvig_data_pack(config: Config, output_file: str):
+    """Creates a compressed .tar.gz file containing the compiled YARA rules and vulnerability database.
+
+    Args:
+        config (Config): The current Ludvig configuration
+        output_file (str): Name of the .tar.gz file to create
+    """
+    if not os.path.exists(config.compiled_rules):
+        logger.warn("Yara rules not found - downloading...")
+        download_rules(config.rule_sources, config.config_path)
+    VulnDb.ensure(config)
+    with tarfile.open(output_file, "w:gz") as tarball:
+        tarball.add(config.vuln_db_file)
+        tarball.add(config.compiled_rules)

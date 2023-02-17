@@ -1,9 +1,9 @@
 import glob
 from tempfile import TemporaryDirectory, TemporaryFile
-from typing import IO, List
+from typing import IO
 import yara
 import os
-from ludvig.config import RuleSetSource
+from ludvig.config import Config, RuleSetSource
 import tarfile
 import requests
 from knack.log import get_logger
@@ -15,9 +15,9 @@ def load_yara_rules(file: str) -> yara.Rules:
     return yara.load(file)
 
 
-def download_rules(sources: List[RuleSetSource], config_path: str) -> yara.Rules:
+def download_rules(config: Config) -> yara.Rules:
     namespaces = {}
-    for src in sources:
+    for src in config.rule_sources:
         set = __download_rule_set(src)
         if not set:
             continue
@@ -28,8 +28,7 @@ def download_rules(sources: List[RuleSetSource], config_path: str) -> yara.Rules
             namespaces[ns] = set
 
     rules = yara.compile(sources=namespaces)
-    output_file = os.path.join(config_path, "ludvig.rules")
-    rules.save(output_file)
+    rules.save(config.compiled_rules)
 
 
 def __download_rule_set(source: RuleSetSource):
