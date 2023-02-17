@@ -51,8 +51,12 @@ class VulnDb(object):
     @staticmethod
     def ensure(config: Config) -> None:
         if not os.path.exists(config.vuln_db_file):
-            logger.warn("No vulnerability database exists - rebuilding...")
-            VulnDb.build(config)
+            logger.warn(
+                "No vulnerability database exists - downloading latest assets..."
+            )
+            from ludvig.utils import download_latest_release
+
+            download_latest_release(config)
 
     @staticmethod
     def build(config: Config) -> None:

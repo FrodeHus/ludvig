@@ -15,7 +15,7 @@ class SecretScanner(BaseScanner):
         super().__init__(config, deobfuscated)
         if not os.path.exists(config.compiled_rules):
             logger.info("no rules found - downloading defaults...")
-            download_rules(config.rule_sources, config.config_path)
+            download_rules(config)
 
         yara_rules = load_yara_rules(config.compiled_rules)
         self.__yara_rules = yara_rules
