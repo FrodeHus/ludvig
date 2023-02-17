@@ -14,6 +14,8 @@ Mostly because I thought it was a fun way to use YARA rules for something in add
 Anyway! Ludvig can, by means of Yara, detect secrets and what-nots in binaries as well as text files.  
 Is it not that we are most worried about? Our secrets leaking into our artifacts that are pushed onto the world?
 
+Additionally, Ludvig is slowly getting support for scanning for vulnerabilities in software, such as third party libraries etc.
+
 ### Sample output
 
 ```
