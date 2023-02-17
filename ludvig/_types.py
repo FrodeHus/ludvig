@@ -119,14 +119,14 @@ class Finding:
         yara_match: yara.Match,
         samples: list[FindingSample],
         file_name: str,
-        meta: dict = {},
+        meta: dict = None,
     ) -> "Finding":
         rule = RuleMatch.from_yara_match(yara_match)
         return Finding(rule.rule_id, rule.category, rule, file_name, samples, meta)
 
     @staticmethod
     def from_vuln_advisory(
-        advisory: Advisory, actual_version: str, filename: str, meta: dict = {}
+        advisory: Advisory, actual_version: str, filename: str, meta: dict = None
     ) -> "Finding":
         rule = RuleMatch.from_vuln_advisory(advisory)
         return Finding(

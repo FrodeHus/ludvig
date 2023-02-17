@@ -94,7 +94,7 @@ class GitPackIndex(dict):
                 object_name = binascii.hexlify(f.read(20)).decode("ascii")
                 idx["objects"].append({"name": object_name, "offset": 0})
             for n in range(idx["total_objects"]):
-                crc = read(f, "I")
+                read(f, "I")  # crc - but we dont use that for now
             for n in range(idx["total_objects"]):
                 offset = read(f, "I")
                 idx["objects"][n]["offset"] = offset
@@ -293,8 +293,8 @@ class GitPack:
         """
         size = 0
         i = 0
-        l = len(data)
-        while i < l:
+        data_len = len(data)
+        while i < data_len:
             c = data[i + offset]
             size |= (c & 0x7F) << i * 7
             i += 1
@@ -342,7 +342,7 @@ class GitPack:
 
     def __get_object_type(self, type: int):
         type_id = (type & 0x70) >> 4
-        if not type_id in range(1, 8):
+        if type_id not in range(1, 8):
             return GitObjectType.NOT_SUPPORTED
         if type_id == 1:
             return GitObjectType.OBJ_COMMIT
@@ -554,16 +554,18 @@ class GitRepository:
             with open(info_refs) as f:
                 ref_data = f.read()
             for line in ref_data.splitlines():
-                l = line.split("\t")
-                ref = l[1]
-                sha = l[0]
+                line_data = line.split("\t")
+                ref = line_data[1]
+                sha = line_data[0]
                 refs[ref] = sha
 
         head_refs = os.path.join(self.path, "refs", "heads")
         if os.path.exists(head_refs):
-            for file in os.listdir(head_refs):
-                with open(os.path.join(head_refs, file)) as f:
-                    refs[os.path.join("refs", "heads", file)] = f.read().rstrip("\n")
+            for file in glob.glob(os.path.join(head_refs, "**/*"), recursive=True):
+                if os.path.isdir(file):
+                    continue
+                with open(file) as f:
+                    refs[file[file.find("refs/") :]] = f.read().rstrip("\n")
         return refs
 
     def __get_pack_files(self):
@@ -598,7 +600,7 @@ class GitMainIndex(dict):
                 with open(path, "rb") as f:
                     inflated = zlib.decompress(f.read())
                     idx = inflated.find(b"\x00")
-                    type = inflated[:idx]
+                    # type = inflated[:idx]
                     content = inflated[idx + 1 :]
                     yield content, entry["name"], entry["sha1"], self.__ref_sha
 
@@ -704,7 +706,7 @@ def read_compressed_object(f: BufferedReader, size: int):
     try:
         content = zlib.decompress(f.read(size))
         return content
-    except:
+    except zlib.error:
         return None
 
 
