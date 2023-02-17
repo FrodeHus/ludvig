@@ -2,3 +2,4 @@
 max-line-length = 160
 exclude = tests/*
 max-complexity = 13
+ignore = E203,W503
