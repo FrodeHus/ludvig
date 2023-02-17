@@ -37,18 +37,18 @@ def create_ludvig_data_pack(config: Config, output_file: str):
     """
     if not os.path.exists(config.compiled_rules):
         logger.warn("Yara rules not found - downloading...")
-        download_rules(config.rule_sources, config.config_path)
-    VulnDb.ensure(config)
+        download_rules(config)
+    VulnDb.build(config)
     with tarfile.open(output_file, "w:gz") as tarball:
         tarball.add(config.vuln_db_file)
         tarball.add(config.compiled_rules)
 
 
 def download_latest_release(config: Config):
-    with tempfile.TemporaryFile() as tmp:
+    with tempfile.NamedTemporaryFile() as tmp:
         try:
-            urllib.request.urlretrieve(config.latest_data_release, tmp)
-            with tarfile.open(tmp, "r:gz") as tarball:
+            urllib.request.urlretrieve(config.latest_data_release, tmp.name)
+            with tarfile.open(tmp.name, "r:gz") as tarball:
                 tarball.extractall(config.config_path)
         except urllib.error.HTTPError as e:
             logger.error("failed to download latest assets: %s", e)

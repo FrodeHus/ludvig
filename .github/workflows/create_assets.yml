@@ -1,0 +1,26 @@
+name: Create asset pack
+
+on:
+  schedule:
+  - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  create_pack:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Ludvig security scanner
+        uses: FrodeHus/ludvig-action@v0.7.0
+        with:
+          createRelease: ludvig_assets.tar.gz
+      - name: Azure Blob Storage Upload
+        uses: bacongobbler/azure-blob-storage-upload@v3.0.0
+        with:
+          source_dir: .
+          container_name: ludvig
+          connection_string: ${{ secrets.STORAGE_CONNECTION }}
+          extra_args: '--pattern *.tar.gz'
+          overwrite: 'true'
