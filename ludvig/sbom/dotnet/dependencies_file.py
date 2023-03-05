@@ -35,4 +35,4 @@ class DependenciesFile:
             )
             libs.append(library)
 
-        return DependenciesFile(libs)
+        return cls(libs)
