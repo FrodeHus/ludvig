@@ -31,4 +31,7 @@ class TestPackageParsers(TestCase):
             packages = parse_package_lock(f.read())
 
         self.assertEqual(len(packages), 282)
-        self.assertEquals(packages[0], {"name": "@babel/runtime", "version": "7.21.0"})
+        self.assertEquals(
+            packages[0],
+            {"ecosystem": "npm", "name": "@babel/runtime", "version": "7.21.0"},
+        )
