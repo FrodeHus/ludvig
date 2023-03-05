@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Ludvig security scanner
-        uses: FrodeHus/ludvig-action@v0.7.0
+        uses: FrodeHus/ludvig-action@v0.8.1
         with:
           createRelease: ludvig_assets.tar.gz
       - name: Azure Blob Storage Upload
