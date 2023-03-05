@@ -423,7 +423,10 @@ class GitRepository:
         if type == GitObjectType.OBJ_COMMIT:
             self.commits.append(current_commit)
         else:
-            logger.error("expected HEAD to point to a commit object, not %s", type.name)
+            logger.warn(
+                "expected HEAD to point to a commit object, not %s",
+                type.name if type else "None",
+            )
         pack_files = self.__get_pack_files()
         for pf in pack_files:
             total_size += os.stat(pf + ".pack").st_size / (1024 * 1024)
