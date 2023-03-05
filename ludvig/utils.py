@@ -40,8 +40,10 @@ def create_ludvig_data_pack(config: Config, output_file: str):
         download_rules(config)
     VulnDb.build(config)
     with tarfile.open(output_file, "w:gz") as tarball:
-        tarball.add(config.vuln_db_file)
-        tarball.add(config.compiled_rules)
+        tarball.add(config.vuln_db_file, arcname=os.path.basename(config.vuln_db_file))
+        tarball.add(
+            config.compiled_rules, arcname=os.path.basename(config.compiled_rules)
+        )
 
 
 def download_latest_release(config: Config):
