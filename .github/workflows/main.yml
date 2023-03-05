@@ -12,7 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Ludvig by Reothor
-        uses: FrodeHus/ludvig-action@v0.7.0
+        uses: FrodeHus/ludvig-action@v0.8.1
         with:
           path: ./ludvig
           sarifFileName: ludvig.sarif
