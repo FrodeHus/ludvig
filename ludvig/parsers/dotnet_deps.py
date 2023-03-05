@@ -3,10 +3,16 @@ import json
 
 
 def parse_dotnet_proj(project_file: str):
-    tree = fromstring(project_file)
+    import xml
+
+    try:
+        tree = fromstring(project_file)
+    except xml.etree.ElementTree.ParseError:
+        return []
     refs = tree.findall("*/PackageReference")
     return [
         {
+            "ecosystem": "nuget",
             "name": r.attrib["Include"],
             "version": r.attrib["Version"] if "Version" in r.attrib else "0",
         }
@@ -15,10 +21,17 @@ def parse_dotnet_proj(project_file: str):
 
 
 def parse_dotnet_deps(deps_file: str):
-    deps_data = json.loads(deps_file)
+    try:
+        deps_data = json.loads(deps_file)
+    except json.JSONDecodeError:
+        return []
     libs = deps_data["libraries"]
     return [
-        {"name": lib[: lib.find("/")], "version": lib[lib.find("/") + 1 :]}
+        {
+            "ecosystem": "nuget",
+            "name": lib[: lib.find("/")],
+            "version": lib[lib.find("/") + 1 :],
+        }
         for lib in libs
         if libs[lib]["type"] == "package"
     ]
