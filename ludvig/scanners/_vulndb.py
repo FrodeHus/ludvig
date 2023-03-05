@@ -4,13 +4,14 @@ from ludvig.config import Config
 from ._common import BaseScanner
 from ludvig.vulndb import VulnDb
 from ludvig.parsers.dotnet_deps import parse_dotnet_deps, parse_dotnet_proj
+from ludvig.parsers.npm import parse_package_lock
 
 
 class VulnerabilityScanner(BaseScanner):
     def __init__(self, vuln_db: VulnDb, config: Config) -> None:
         super().__init__(False, config)
         self.__db = vuln_db
-        self.__parsers = [parse_dotnet_deps, parse_dotnet_proj]
+        self.__parsers = [parse_dotnet_deps, parse_dotnet_proj, parse_package_lock]
 
     def scan_file_data(
         self, file_data: IO[bytes], file_name: str, severity_level: Severity, **kwargs
@@ -33,4 +34,4 @@ class VulnerabilityScanner(BaseScanner):
         return findings
 
     def accepted_files(self) -> List[str]:
-        return ["*.deps.json", "*.csproj"]
+        return ["*.deps.json", "*.csproj", "package-lock.json"]
