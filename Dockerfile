@@ -1,6 +1,6 @@
 FROM python:alpine
-ENV YARA_VERSION 4.2.3
-ENV YARA_PY_VERSION 4.2.3
+ENV YARA_VERSION 4.3.0
+ENV YARA_PY_VERSION 4.3.0
 RUN apk add --no-cache openssl file jansson bison python3 tini su-exec
 RUN apk add --no-cache -t .build-deps py3-setuptools \
   openssl-dev \
