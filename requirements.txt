@@ -20,5 +20,5 @@ toml==0.10.2
 urllib3==1.26.15
 yara-python==4.3.1
 python-dateutil==2.8.2
-mock==5.0.1
+mock==5.0.2
 defusedxml==0.7.1
