@@ -1,6 +1,6 @@
 argcomplete==3.0.8
 attrs==23.1.0
-certifi==2022.12.7
+certifi==2023.5.7
 charset-normalizer==3.1.0
 cyclonedx-python-lib==4.0.0
 idna==3.4
