@@ -71,17 +71,16 @@ class FindingSample:
 
     @classmethod
     def from_yara_match(
-        cls, match: yara.Match, deobfuscated=False, line_number: int = -1
+        cls, str_match: yara.StringMatch, deobfuscated=False, line_number: int = -1
     ) -> List["FindingSample"]:
         samples = []
-        for str_match in match.strings:
-            offset = str_match[0]
-            data = str_match[2]
-            if data.isascii():
-                data = data.decode("utf-8")
-            else:
-                data = "".join(format(x, "02x") for x in data)
-            samples.append(FindingSample(data, offset, deobfuscated, line_number))
+        offset = str_match.instances[0].offset
+        data = str_match.instances[0].matched_data
+        if data.isascii():
+            data = data.decode("utf-8")
+        else:
+            data = "".join(format(x, "02x") for x in data)
+        samples.append(FindingSample(data, offset, deobfuscated, line_number))
         return samples
 
 
