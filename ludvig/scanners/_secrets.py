@@ -35,8 +35,10 @@ class SecretScanner(BaseScanner):
                 )
                 if severity < severity_level:
                     continue
-                line = self.find_match_line_num(file_data, match)
-                samples = FindingSample.from_yara_match(match, self.deobfuscated, line)
+                line, string_match = self.find_match_line_num(file_data, match)
+                if not line:
+                    continue
+                samples = FindingSample.from_yara_match(string_match, self.deobfuscated, line)
                 finding = Finding.from_secret(match, samples, file_name, {**kwargs})
                 findings.append(finding)
         except Exception as ex:
@@ -46,9 +48,12 @@ class SecretScanner(BaseScanner):
 
     def find_match_line_num(self, file_data, match):
         file_data.seek(0)
-        fd = file_data.read(match.strings[0][0])
-        line = fd.count(b"\n") + 1
-        return line
+        for string_match in match.strings:
+            if not string_match.instances:
+                continue
+            line = string_match.instances[0].matched_data
+            return line, string_match
+        return None, None
 
     def accepted_files(self) -> List[str]:
         return ["*"]
