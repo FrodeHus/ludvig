@@ -53,7 +53,7 @@ class Config:
                 RuleSetSource(
                     "Built-In",
                     "secrets",
-                    "https://github.com/FrodeHus/ludvig-rules/archive/refs/tags/v0.0.1.tar.gz",
+                    "https://github.com/FrodeHus/ludvig-rules/archive/refs/tags/v0.0.2.tar.gz",
                 )
             )
         else:
@@ -61,7 +61,7 @@ class Config:
                 RuleSetSource(
                     "Built-In",
                     "secrets",
-                    "https://github.com/FrodeHus/ludvig-rules/archive/refs/tags/v0.0.1.tar.gz",
+                    "https://github.com/FrodeHus/ludvig-rules/archive/refs/tags/v0.0.2.tar.gz",
                 )
             ]
 
