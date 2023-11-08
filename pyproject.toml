@@ -15,7 +15,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    'cyclonedx-python-lib == 4.0.1',
+    'cyclonedx-python-lib == 5.1.1',
     'packageurl-python==0.11.1',
     'requests==2.31.0',
     'yara-python==4.3.1',
