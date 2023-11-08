@@ -10,7 +10,7 @@ jsonpickle==3.0.1
 knack==0.10.1
 packageurl-python==0.11.1
 pbr==5.11.1
-Pygments==2.15.1
+Pygments==2.16.1
 PyYAML==6.0.1
 requests==2.31.0
 sarif-om==1.0.4
