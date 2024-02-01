@@ -19,7 +19,7 @@ def read_local_docker_image(repository: str) -> Image:
     file_layers = [layer for layer in config["history"] if "empty_layer" not in layer]
     layers = []
     for idx, layer in enumerate(manifest[0]["Layers"]):
-        layer_id = layer[: layer.index("/")]
+        layer_id = layer
         layer_history = __get_layer_history(file_layers, idx + 1)
         layers.append(
             Layer(

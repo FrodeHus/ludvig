@@ -26,7 +26,7 @@ class ContainerProvider(BaseFileProvider):
             for layer in [layer for layer in layers if not layer.empty_layer]:
                 logger.info("layer %s: %s", layer.id, layer.created_by)
                 with image.image_archive.extractfile(
-                    "{}/layer.tar".format(layer.id)
+                    layer.id
                 ) as layer_archive:
                     with tarfile.open(fileobj=layer_archive, mode="r") as lf:
                         try:
