@@ -22,7 +22,7 @@ class RuleMatch:
     severity: Severity = field(default_factory=lambda: Severity.MEDIUM)
     category: str = field(default=None)
     description: str = field(default=None)
-    tags: list[str] = field(default_factory=lambda: [])
+    tags: List[str] = field(default_factory=lambda: [])
 
     @property
     def __dict__(self):
@@ -91,7 +91,7 @@ class Finding:
     rule: RuleMatch
     filename: str
     severity: Severity = field(init=False)
-    samples: list[FindingSample] = field(default_factory=lambda: [])
+    samples: List[FindingSample] = field(default_factory=lambda: [])
     properties: dict = field(default_factory=dict)
     _hash: str = field(init=False, repr=False)
 
@@ -118,7 +118,7 @@ class Finding:
     @staticmethod
     def from_secret(
         yara_match: yara.Match,
-        samples: list[FindingSample],
+        samples: List[FindingSample],
         file_name: str,
         meta: dict = None,
     ) -> "Finding":

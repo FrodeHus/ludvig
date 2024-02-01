@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ludvig"
-version = "0.8.3"
+version = "0.8.4"
 authors = [{ name = "Frode Hus", email = "frode@frodehus.dev" }]
 description = "A simple vulnerability scanner"
 readme = "README.md"
@@ -15,16 +15,16 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    'cyclonedx-python-lib == 5.1.1',
-    'packageurl-python==0.11.1',
-    'requests==2.31.0',
+    'cyclonedx-python-lib >= 5.1.1',
+    'packageurl-python>=0.11.1',
+    'requests>=2.31.0',
     'yara-python==4.3.1',
-    'knack==0.11.0',
-    'jschema_to_python==1.2.3',
-    'sarif_om==1.0.4',
-    'urllib3==2.1.0',
-    'python-dateutil==2.8.2',
-    'defusedxml==0.7.1',
+    'knack>=0.11.0',
+    'jschema_to_python>=1.2.3',
+    'sarif_om>=1.0.4',
+    'urllib3>=2.1.0',
+    'python-dateutil>=2.8.2',
+    'defusedxml>=0.7.1',
 ]
 
 
@@ -41,7 +41,7 @@ line-length = 88
 target-version = ['py39']
 include = '\.pyi?$'
 [tool.bumpver]
-current_version = "0.8.3"
+current_version = "0.8.4"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true

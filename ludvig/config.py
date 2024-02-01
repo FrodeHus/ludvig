@@ -1,6 +1,7 @@
 import json
 import os
 from dataclasses import dataclass, asdict
+from typing import List
 
 
 def get_config() -> "Config":
@@ -39,8 +40,8 @@ class Config:
     def __init__(
         self,
         config_path: str,
-        rule_sources: list[RuleSetSource] = None,
-        vulndb_sources: list[VulnDbSource] = None,
+        rule_sources: List[RuleSetSource] = None,
+        vulndb_sources: List[VulnDbSource] = None,
     ) -> None:
         self.config_path = config_path
         self.compiled_rules = os.path.join(config_path, "ludvig.rules")
