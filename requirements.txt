@@ -1,4 +1,4 @@
-argcomplete==3.1.4
+argcomplete==3.2.2
 attrs==23.1.0
 certifi==2023.7.22
 charset-normalizer==3.3.2
@@ -8,7 +8,7 @@ jmespath==1.0.1
 jschema-to-python==1.2.3
 jsonpickle==3.0.2
 knack==0.11.0
-packageurl-python==0.11.1
+packageurl-python==0.13.4
 pbr==5.11.1
 Pygments==2.16.1
 PyYAML==6.0.1
@@ -17,7 +17,7 @@ sarif-om==1.0.4
 sortedcontainers==2.4.0
 tabulate==0.9.0
 toml==0.10.2
-urllib3==2.0.7
+urllib3==2.1.0
 yara-python==4.3.1
 python-dateutil==2.8.2
 mock==5.1.0
