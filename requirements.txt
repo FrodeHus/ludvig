@@ -9,7 +9,7 @@ jschema-to-python==1.2.3
 jsonpickle==3.0.2
 knack==0.11.0
 packageurl-python==0.13.4
-pbr==5.11.1
+pbr==6.1.1
 Pygments==2.16.1
 PyYAML==6.0.1
 requests==2.31.0
